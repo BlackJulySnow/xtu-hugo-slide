@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   {{ $pageTitle := or .Params.subsection_title .Title .Site.Title }}
   <title>{{ $pageTitle }} | {{ .Site.Title }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ "brand/xtu-logo.svg" | relURL }}">
+  <link rel="shortcut icon" href="{{ "brand/xtu-logo.svg" | relURL }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- 学术汇报专用字体：英文衬线字体 + 中文思源宋体/黑体 + 代码等宽字体 -->
