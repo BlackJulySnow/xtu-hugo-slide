@@ -1,0 +1,139 @@
+你是一位 CVPR/NeurIPS 顶刊的**视觉架构师**。你的核心能力是将抽象的论文逻辑转化为**具体的、结构化的、几何级的视觉指令**。
+
+Energy Core Agent作为核心需要包裹住几个下游任务
+
+Defining Visual Style
+
+I'm focusing on crafting a system architecture diagram for an academic paper on a multi-agent system framework. The goal is a visual that fits the style of top-tier journals, aiming for clarity and scientific rigor. I'm prioritizing conveying the technical aspects effectively, suitable for a Nature or Cell publication.
+
+Refining Diagram Elements
+
+I'm now zeroing in on the system architecture diagram's specific components and their relationships. I'm focusing on a 16:9 layout for the illustration. The left side should no longer look like a heavy scheduling subsystem. It should be simplified into a lightweight task setup region. The "Energy Core Agent" sits at the center and should now be redefined as a three-part thermodynamic semantic core rather than a BDE/BDFE-only module stack. I'm moving toward the design of the downstream task layer with a clearer scientific hierarchy.
+
+Mapping System Architecture
+
+I've outlined the complete layout for the system architecture diagram. I've designed the visual flow from input to evaluation, including specific agents and modules. I'm focusing on incorporating the color scheme, emphasizing the core layer's deep blue, with the retrosynthesis task highlighted in orange. I'm working to visually represent the main execution flows with solid lines and feedback with dashed lines. The goal is clarity. I am planning to place a key annotation in the lower right corner, and a legend.
+
+Constructing the Diagram
+
+I'm now focusing on the components of the system architecture diagram. I'm finalizing the 16:9 layout, ensuring a clear flow from input to evaluation, with agents and modules visually represented. I'm refining the palette toward a journal-ready SCI style, closer to Nature or Cell Systems figures: deep navy for the core, desaturated teal and steel-blue for semantic modules, pale blue-gray for secondary panels, and a muted warm orange for the retrosynthesis task. Solid lines will represent execution flows, and dashed lines will represent feedback. I plan to include a key annotation in the lower right and a legend. I am currently working on clean scientific icons using cylinders, molecular glyphs, and minimal geometric biology symbols. The diagram text should be in English only.
+
+Structuring the Diagram
+
+I'm now detailing the system architecture diagram based on the "Energy Core Virtual Lab Multi-Agent System Framework." I'm adhering to a top-tier journal style for clarity and technical accuracy, with a 16:9 layout. I have finalized the diagram structure with inputs on the left, an orchestrator agent, a deep-blue energy core agent at the center, and a downstream task layer. The orange line will be used for the retrosynthesis agent.
+
+Finalizing Diagram Details
+
+I'm now detailing the "Energy Core Virtual Lab Multi-Agent System Framework" diagram for my presentation and paper. I've chosen a clear, English-labeled layout, adhering to a 16:9 ratio and a restrained SCI-style palette that emphasizes hierarchy, clarity, and technical precision. The design includes specific icons for each agent and module.
+
+Analyzing the Architecture
+
+I've reviewed the generated architectural diagram. It correctly implements the specified six-layer structure, complete with Chinese text labels and the designated emphasis colors and arrows to describe logical flows and feedback loops. The "逆合成Agent" and "BDE节点" nodes are properly highlighted in orange. The legend and annotation in the lower right are accurate.
+
+Evaluating the Execution
+
+I've examined the generated architectural diagram. The execution is flawless, adhering precisely to all instructions. The structure, English labels, emphasis colors, and arrows representing logical flow and feedback are correct. The retrosynthesis node and the thermodynamic core dimensions are properly highlighted. The legend and annotation are also accurate. The professional style and alignment meet academic reporting requirements.
+
+[Style & Meta-Instructions] High-fidelity scientific schematic, technical vector illustration, clean white background, distinct boundaries, SCI journal figure style, suitable for Nature / Cell Systems / computational chemistry papers. High resolution 2K, strictly 2D flat design with subtle depth only for card hierarchy. All text rendered in a professional, clean English font.
+
+[LAYOUT CONFIGURATION]
+
+Selected Layout: Central Hub (Energy Core) with organized, complex linear flow and a recursive feedback loop.
+
+Composition Logic: A powerful central hub (Energy Core) processing data with parallel agent branches, flanked by a pre-processing intake/scheduling layer (left) and a post-processing evaluation/memory layer (right), connected by direct flows and a distinct, looping feedback channel.
+
+Color Palette: SCI-style restrained palette. Use deep navy for the Energy Core container, desaturated teal and steel-blue for the three semantic dimensions, pale blue-gray for side panels and secondary modules, muted warm orange for the highlighted retrosynthesis task, and neutral gray for dashed feedback arrows. Avoid bright saturated cyan, cartoon orange, or decorative mint.
+
+[LEFT PANEL: TASK SETUP]
+
+Container: A light grey-blue transparent rectangular panel with rounded corners.
+
+Visual Structure: Two small, lightweight stacked nodes.
+
+Node 1: (Top) labeled "User Goal" with a precise document icon. Below this, a short bulleted text list:
+
+Goal Molecule
+
+Constraints
+
+Resource Budget
+
+Node 2: (Bottom) connected to Node 1 by a solid blue flow arrow, labeled "Task Parsing". Inside, a compact routing or analysis icon. Text below labels: "Goal Understanding, Task Routing".
+
+Key Text Labels: "User Goal", "Constraints", "Resource Budget", "Task Parsing", "Goal Understanding, Task Routing".
+
+[CENTER HUB: ENERGY CORE AGENT]
+
+Container: A dominant deep-navy rectangular agent container box. The label "Energy Core Agent" is centered at the top in white text.
+
+Visual Structure: A clean vertical stack of three distinct semantic module blocks inside the container, labeled in white text. Each block should have its own restrained scientific tint while staying within the same navy-teal family, and each block should include a small, precise scientific icon that reinforces its meaning.
+
+Top block: "Covalent Dimension (BDE)". Add a minimal bond-cleavage or radical icon.
+
+Second block: "Non-covalent Dimension (ΔG)". Add a minimal protein-ligand or pocket-interaction icon.
+
+Third block: "Activation Free Energy Dimension (ΔG‡)". Add a minimal transition-state or energy-barrier icon.
+
+Connections: A branching multi-arrow flows from these modules to the next zone.
+
+Key Text Labels: "Energy Core Agent", "Covalent Dimension (BDE)", "Non-covalent Dimension (ΔG)", "Activation Free Energy Dimension (ΔG‡)".
+
+[RIGHT-CENTER PANEL: DOWNSTREAM TASK CLUSTER]
+
+Container: A clean, lightly organized task cluster with no large section title. Do not render any visible heading such as "Integrated Downstream Task System".
+
+Visual Structure: Four downstream agent blocks arranged in a compact cluster. They may be stacked or semi-clustered, but they should visually read as one grouped task region without an extra title banner.
+
+Top (Muted Warm Orange): "Retrosynthesis Agent". Contains small internal geometric icons of retro-arrows and molecular synthesis webs.
+
+Second (Light Blue): "Metabolism Site Agent". Contains small geometric webs of molecular pathways and active sites.
+
+Third (Light Blue): "Protein Radical Reactivity Agent". Contains a stylized protein-radical interaction diagram and radical icons.
+
+Fourth (Light Blue): "Binding Free Energy Agent". Contains a protein-ligand complex and geometric data curves.
+
+Key Text Labels: "Retrosynthesis Agent", "Metabolism Site Agent", "Protein Radical Reactivity Agent", "Binding Free Energy Agent".
+
+[FAR-RIGHT PANEL: EVALUATION AND MEMORY]
+
+Container: A light grey-blue transparent rectangular panel with rounded corners.
+
+Visual Structure: Two stacked, distinct nodes.
+
+Node 1: (Upper) labeled "Evaluator Agent". Features a precise balance scale icon and a set of small data charts/graphs.
+
+Node 2: (Lower) labeled "Shared Memory / Knowledge Base". Features a cylinder database icon with small, internal geometric data point grids and knowledge graph nodes.
+
+Connection: A solid, bi-directional blue arrow links the two.
+
+Key Text Labels: "Evaluator Agent", "Shared Memory / Knowledge Base".
+
+[CONNECTIONS]
+
+Main Flow: Direct solid blue flow arrows from Zone 1 to Zone 2, and one main solid blue arrow from Zone 2 to the downstream task cluster in Zone 3.
+
+Downstream Feed: Use only one clean, prominent arrow to connect the Energy Core region to the downstream task cluster. Do not draw separate arrows into every downstream submodule.
+
+Task Output: Use only one clean, prominent arrow from the downstream task cluster into the evaluation-and-memory region. Do not draw separate output arrows from every downstream submodule.
+
+Data Persistence: A solid blue arrow from Zone 3 collected output directly to the Shared Memory in Zone 4.
+
+Bi-directional Interaction: A bi-directional solid blue arrow between the Evaluator Agent and the Shared Memory in Zone 4.
+
+Recursive Feedback Loop: A distinct dotted grey feedback line starting from the Shared Memory node in Zone 4, following an orthogonal bent path with one or more clean right-angle turns, and connecting back into the first left-side module in Zone 1. Do not use a large curved arc. The feedback should look like a structured scientific routing line.
+
+[LEGEND]
+
+Container: A compact clean white rectangle box with a blue border placed on the left side of the figure. Make it smaller than before so it supports the diagram without drawing attention.
+
+Visual Structure: A vertical list of entries with corresponding visual cues.
+
+[Entry 1]: [Solid Blue Arrow] "Execution Flow"
+
+[Entry 2]: [Dotted Grey Arrow] "Feedback Flow"
+
+[Entry 3]: [Muted Orange Block Color] "Highlighted Main Task"
+
+Key Text Labels: "Execution Flow", "Feedback Flow", "Highlighted Main Task".
+
+[OVERALL AESTHETICS] All elements must have clean, smooth vector lines. Colors must be restrained, publication-like, and technically credible. Background is pure white. The text is crisp and legible, properly positioned. All chemistry and biology icons are geometric, minimal, and high fidelity. No extra notes or decorative applications should be present. The figure must feel like an SCI paper framework figure, not a generic AI infographic. Prefer fewer arrows and stronger region-level connections over many local connections.

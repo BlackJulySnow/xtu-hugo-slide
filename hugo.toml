@@ -1,0 +1,57 @@
+# 本地开发访问地址
+baseURL = "http://localhost:1313/"
+# 生成相对路径，便于直接打开 public 下的 HTML 文件
+relativeURLs = true
+# 站点语言
+languageCode = "zh-CN"
+# 站点时区
+timeZone = "Asia/Shanghai"
+# 站点标题
+title = "XTU Hugo Slide Sample"
+
+# 忽略 docs 目录下的文件，不作为页面渲染
+ignoreFiles = ["/docs/.*\\.md$", "/docs/.*\\.html$"]
+
+# 关闭不需要的 Hugo 输出类型
+disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
+
+[params]
+# 首页副标题
+subtitle = "Xiangtan University Slide Theme Demo"
+# 默认作者
+author = "XTU Team"
+# deck 未单独指定时的默认汇报人
+presenter = "XTU Team"
+# deck 未单独指定时的默认汇报日期
+report_date = "2026-03-05"
+
+# Slide 固定画布与排版参数
+[params.slide]
+# 设计画布宽度，预览与导出共用
+designWidth = 1920
+# 设计画布高度，预览与导出共用
+designHeight = 1080
+# 正文基准字号
+bodyFontPx = 30
+# 页头标题字号，对应 subsection_title
+titleFontPx = 55
+# 正文 h2 相对页头标题的缩放系数
+headingScale = 0.9
+# 底部导航标题字号
+navTitleFontPx = 25
+# 封面主标题字号
+coverTitleFontPx = 68
+# 封面副信息字号
+coverMetaFontPx = 30
+# 图片 caption 字号
+captionFontPx = 32
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block = [['\[', '\]'], ['$$', '$$']]
+        inline = [['\(', '\)'], ['$', '$']]

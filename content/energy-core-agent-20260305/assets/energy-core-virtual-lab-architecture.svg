@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7fbff"/>
+      <stop offset="100%" stop-color="#eef5ff"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2d5f9a"/>
+    </marker>
+    <style>
+      .title { font: 700 38px 'Segoe UI', Arial, sans-serif; fill: #0f3f77; }
+      .sub { font: 500 22px 'Segoe UI', Arial, sans-serif; fill: #1f4f86; }
+      .box { fill: #ffffff; stroke: #2d5f9a; stroke-width: 2.5; rx: 18; }
+      .core { fill: #e6f0ff; stroke: #1e4f8e; stroke-width: 3; rx: 20; }
+      .task { fill: #f8fbff; stroke: #86a8d1; stroke-width: 2; rx: 14; }
+      .lbl { font: 600 24px 'Segoe UI', Arial, sans-serif; fill: #173e6d; }
+      .small { font: 500 19px 'Segoe UI', Arial, sans-serif; fill: #29527f; }
+      .line { stroke: #2d5f9a; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #537eb0; stroke-width: 2.5; stroke-dasharray: 9 8; fill: none; marker-end: url(#arrow); }
+      .legend { font: 500 18px 'Segoe UI', Arial, sans-serif; fill: #2a4e78; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="920" fill="url(#bg)"/>
+  <text x="800" y="66" text-anchor="middle" class="title">能量核心虚拟实验室 Multi-Agent 系统架构</text>
+  <text x="800" y="98" text-anchor="middle" class="sub">Task-driven Routing -> Energy Core Agent -> Domain Agents -> Evaluator & Memory</text>
+
+  <rect class="box" x="90" y="180" width="250" height="110"/>
+  <text class="lbl" x="215" y="230" text-anchor="middle">任务入口</text>
+  <text class="small" x="215" y="262" text-anchor="middle">Prompt / 目标约束</text>
+
+  <rect class="box" x="390" y="160" width="300" height="150"/>
+  <text class="lbl" x="540" y="220" text-anchor="middle">Orchestrator Agent</text>
+  <text class="small" x="540" y="250" text-anchor="middle">任务解析 + 路由调度</text>
+
+  <rect class="core" x="735" y="138" width="360" height="194"/>
+  <text class="lbl" x="915" y="214" text-anchor="middle">Energy Core Agent</text>
+  <text class="small" x="915" y="246" text-anchor="middle">BDE/BDFE 统一能量表示</text>
+  <text class="small" x="915" y="274" text-anchor="middle">不确定性评估 + 约束校核</text>
+
+  <rect class="box" x="1160" y="160" width="320" height="150"/>
+  <text class="lbl" x="1320" y="220" text-anchor="middle">Evaluator Agent</text>
+  <text class="small" x="1320" y="250" text-anchor="middle">指标评估 + 反馈打分</text>
+
+  <rect class="box" x="1180" y="380" width="280" height="130"/>
+  <text class="lbl" x="1320" y="436" text-anchor="middle">Shared Memory</text>
+  <text class="small" x="1320" y="468" text-anchor="middle">经验轨迹 / 失败案例</text>
+
+  <rect class="task" x="180" y="480" width="260" height="105"/>
+  <text class="small" x="310" y="530" text-anchor="middle">Retrosynthesis Agent</text>
+  <text class="small" x="310" y="558" text-anchor="middle">(BDE断键优先级)</text>
+
+  <rect class="task" x="470" y="480" width="260" height="105"/>
+  <text class="small" x="600" y="530" text-anchor="middle">Metabolism Agent</text>
+  <text class="small" x="600" y="558" text-anchor="middle">(代谢位点预测)</text>
+
+  <rect class="task" x="760" y="480" width="260" height="105"/>
+  <text class="small" x="890" y="530" text-anchor="middle">Protein Reactivity Agent</text>
+  <text class="small" x="890" y="558" text-anchor="middle">(酶/自由基反应性)</text>
+
+  <rect class="task" x="1050" y="480" width="260" height="105"/>
+  <text class="small" x="1180" y="530" text-anchor="middle">Binding FE Agent</text>
+  <text class="small" x="1180" y="558" text-anchor="middle">(结合自由能排序)</text>
+
+  <path class="line" d="M340 235 L390 235"/>
+  <path class="line" d="M690 235 L735 235"/>
+  <path class="line" d="M1095 235 L1160 235"/>
+
+  <path class="line" d="M915 332 L915 450"/>
+  <path class="line" d="M915 450 L310 450 L310 480"/>
+  <path class="line" d="M915 450 L600 450 L600 480"/>
+  <path class="line" d="M915 450 L890 450 L890 480"/>
+  <path class="line" d="M915 450 L1180 450 L1180 480"/>
+
+  <path class="dash" d="M310 585 L310 700 L1320 700 L1320 510"/>
+  <path class="dash" d="M600 585 L600 670 L1320 670"/>
+  <path class="dash" d="M890 585 L890 640 L1320 640"/>
+  <path class="dash" d="M1180 585 L1180 610 L1320 610"/>
+  <path class="dash" d="M1320 380 L1320 330 L915 330"/>
+
+  <rect x="86" y="760" width="620" height="115" rx="14" fill="#ffffff" stroke="#9ab6d9" stroke-width="1.8"/>
+  <line x1="126" y1="806" x2="196" y2="806" class="line"/>
+  <text class="legend" x="210" y="812">主执行流（规划与调用）</text>
+  <line x1="126" y1="845" x2="196" y2="845" class="dash"/>
+  <text class="legend" x="210" y="851">反馈流（评估与记忆回写）</text>
+
+  <rect x="760" y="760" width="760" height="115" rx="14" fill="#ffffff" stroke="#9ab6d9" stroke-width="1.8"/>
+  <text class="legend" x="790" y="810">核心创新：以 Energy Core Agent 统一多任务能量语义，</text>
+  <text class="legend" x="790" y="844">让下游任务复用同一套“能量判别 + 不确定性控制”能力。</text>
+</svg>

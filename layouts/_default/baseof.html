@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="{{ if .IsHome }}xtu-html-home{{ end }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {{ $pageTitle := or .Params.subsection_title .Title .Site.Title }}
+  <title>{{ $pageTitle }} | {{ .Site.Title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- 学术汇报专用字体：英文衬线字体 + 中文思源宋体/黑体 + 代码等宽字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Roboto:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+</head>
+{{ $slideWidth := .Site.Params.slide.designWidth | default 1280 }}
+{{ $slideHeight := .Site.Params.slide.designHeight | default 720 }}
+{{ $bodyFontPx := .Site.Params.slide.bodyFontPx | default 35.2 }}
+{{ $titleFontPx := .Site.Params.slide.titleFontPx | default 84.48 }}
+{{ $headingScale := .Site.Params.slide.headingScale | default 0.9 }}
+{{ $navTitleFontPx := .Site.Params.slide.navTitleFontPx | default 18.3 }}
+{{ $coverTitleFontPx := .Site.Params.slide.coverTitleFontPx | default 65.47 }}
+{{ $coverMetaFontPx := .Site.Params.slide.coverMetaFontPx | default 21.47 }}
+{{ $captionFontPx := .Site.Params.slide.captionFontPx | default 18 }}
+<body class="xtu-site {{ if .IsHome }}xtu-index-page{{ else if .IsPage }}xtu-post-page{{ else if .IsSection }}xtu-section-page{{ else }}xtu-page{{ end }}"{{ if not .IsHome }} data-slide-width="{{ $slideWidth }}" data-slide-height="{{ $slideHeight }}" style="--xtu-slide-design-width: {{ $slideWidth }}px; --xtu-slide-design-height: {{ $slideHeight }}px; --xtu-slide-body-font-px: {{ $bodyFontPx }}px; --xtu-slide-title-font-px: {{ $titleFontPx }}px; --xtu-slide-heading-scale: {{ $headingScale }}; --xtu-slide-nav-title-font-px: {{ $navTitleFontPx }}px; --xtu-slide-cover-title-font-px: {{ $coverTitleFontPx }}px; --xtu-slide-cover-meta-font-px: {{ $coverMetaFontPx }}px; --xtu-slide-caption-font-px: {{ $captionFontPx }}px;"{{ end }}>
+  {{ block "main" . }}{{ end }}
+  {{ if not .IsHome }}
+  <script>
+  (function () {
+    var body = document.body;
+    if (!body) return;
+
+    var designWidth = Number(body.getAttribute('data-slide-width')) || 1280;
+    var designHeight = Number(body.getAttribute('data-slide-height')) || 720;
+    var computed = window.getComputedStyle(body);
+    var titleFontPx = Number.parseFloat(computed.getPropertyValue('--xtu-slide-title-font-px')) || 84.48;
+    var bodyFontPx = Number.parseFloat(computed.getPropertyValue('--xtu-slide-body-font-px')) || 35.2;
+    var headingScale = Number.parseFloat(computed.getPropertyValue('--xtu-slide-heading-scale')) || 0.9;
+
+    function applyHeadingFontScale() {
+      var h2FontPx = titleFontPx * headingScale;
+
+      if (!(h2FontPx > bodyFontPx)) {
+        for (var fallbackLevel = 2; fallbackLevel <= 6; fallbackLevel += 1) {
+          body.style.setProperty('--xtu-slide-h' + fallbackLevel + '-font-px', bodyFontPx + 'px');
+        }
+        return;
+      }
+
+      var ratio = Math.pow(bodyFontPx / h2FontPx, 1 / 4);
+      body.style.setProperty('--xtu-slide-h2-font-px', h2FontPx.toFixed(4) + 'px');
+      body.style.setProperty('--xtu-slide-h3-font-px', (h2FontPx * Math.pow(ratio, 1)).toFixed(4) + 'px');
+      body.style.setProperty('--xtu-slide-h4-font-px', (h2FontPx * Math.pow(ratio, 2)).toFixed(4) + 'px');
+      body.style.setProperty('--xtu-slide-h5-font-px', (h2FontPx * Math.pow(ratio, 3)).toFixed(4) + 'px');
+      body.style.setProperty('--xtu-slide-h6-font-px', bodyFontPx.toFixed(4) + 'px');
+    }
+
+    function applyPreviewScale() {
+      var viewportWidth = window.innerWidth || designWidth;
+      var viewportHeight = window.innerHeight || designHeight;
+      var scale = Math.min(viewportWidth / designWidth, viewportHeight / designHeight);
+      body.style.setProperty('--xtu-preview-scale', String(scale || 1));
+    }
+
+    applyHeadingFontScale();
+    applyPreviewScale();
+    window.addEventListener('resize', applyPreviewScale);
+  })();
+  </script>
+  {{ end }}
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "xtu-hugo-sample",
+  "version": "0.1.0",
+  "private": true,
+  "description": "XTU slide-style Hugo sample project",
+  "scripts": {
+    "clean": "rm -rf public resources",
+    "build": "hugo --cleanDestinationDir",
+    "export-pdf": "node scripts/export-pdf.js",
+    "dev": "hugo server -D",
+    "new": "hugo new slide1/new-slide.md",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.53.2"
+  }
+}

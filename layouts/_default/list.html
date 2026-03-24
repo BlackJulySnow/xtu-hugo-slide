@@ -1,0 +1,67 @@
+{{ define "main" }}
+{{ $slides := slice }}
+{{ range $page := .RegularPages }}
+  {{ if not (strings.HasPrefix $page.File.Dir "docs") }}
+    {{ $slides = $slides | append $page }}
+  {{ end }}
+{{ end }}
+{{ $slides = sort $slides ".Params.order" }}
+{{ $firstSlide := "#" }}
+{{ with index $slides 0 }}
+  {{ $firstSlide = printf "./%s/" .File.ContentBaseName }}
+{{ end }}
+{{ $presenter := or .Params.presenter .Site.Params.presenter .Site.Params.author "未设置" }}
+{{ $reportDate := or .Params.report_date .Site.Params.report_date (now.Format "2006-01-02") }}
+{{ $siteHomeUrl := "../" }}
+
+<main class="xtu-cover-main" data-next="{{ $firstSlide }}">
+  <h1 class="xtu-cover-title">{{ .Title }}</h1>
+  <p class="xtu-cover-meta">汇报人：{{ $presenter }} ｜ 日期：{{ $reportDate }}</p>
+</main>
+
+<script>
+(function () {
+  var root = document.querySelector('.xtu-cover-main');
+  var nextUrl = root ? root.getAttribute('data-next') : '';
+  var wheelLock = false;
+
+  function goNext() {
+    if (!nextUrl || nextUrl === '#') return;
+    window.location.href = nextUrl;
+  }
+
+  if (root) {
+    root.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a')) return;
+      goNext();
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var right = e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.keyCode === 39 || e.keyCode === 40;
+    var back = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.keyCode === 37 || e.keyCode === 38;
+    if (right) {
+      e.preventDefault();
+      goNext();
+      return;
+    }
+    if (back) {
+      e.preventDefault();
+      window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }};
+    }
+  });
+
+  document.addEventListener('wheel', function (e) {
+    if (wheelLock) return;
+    if (Math.abs(e.deltaY) < 16) return;
+    wheelLock = true;
+    if (e.deltaY > 0) {
+      goNext();
+    } else {
+      window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }};
+    }
+    setTimeout(function () { wheelLock = false; }, 280);
+  }, { passive: true });
+})();
+</script>
+{{ end }}

@@ -1,0 +1,23 @@
+<svg width="960" height="540" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="540" fill="#f8fbff"/>
+  <rect x="80" y="70" width="800" height="400" rx="16" fill="#ffffff" stroke="#cdddf0" stroke-width="2"/>
+  <text x="120" y="120" fill="#003d82" font-size="28" font-family="Arial, sans-serif" font-weight="700">XTU Slide Layout Capability</text>
+  <rect x="120" y="150" width="220" height="120" rx="12" fill="#e8f1fb" stroke="#7ba3c9"/>
+  <text x="230" y="215" text-anchor="middle" fill="#003d82" font-size="22" font-family="Arial, sans-serif">Meta</text>
+  <text x="230" y="243" text-anchor="middle" fill="#2b5d95" font-size="16" font-family="Arial, sans-serif">title / section</text>
+  <rect x="370" y="150" width="220" height="120" rx="12" fill="#edf6ff" stroke="#7ba3c9"/>
+  <text x="480" y="215" text-anchor="middle" fill="#003d82" font-size="22" font-family="Arial, sans-serif">Layout Blocks</text>
+  <text x="480" y="243" text-anchor="middle" fill="#2b5d95" font-size="16" font-family="Arial, sans-serif">stack / split / grid</text>
+  <rect x="620" y="150" width="220" height="120" rx="12" fill="#eaf4ff" stroke="#7ba3c9"/>
+  <text x="730" y="215" text-anchor="middle" fill="#003d82" font-size="22" font-family="Arial, sans-serif">Renderer</text>
+  <text x="730" y="243" text-anchor="middle" fill="#2b5d95" font-size="16" font-family="Arial, sans-serif">table + images</text>
+  <path d="M340 210 H370" stroke="#1a5fb4" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M590 210 H620" stroke="#1a5fb4" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="220" y="320" width="520" height="90" rx="12" fill="#003d82" opacity="0.92"/>
+  <text x="480" y="365" text-anchor="middle" fill="#ffffff" font-size="24" font-family="Arial, sans-serif">Composable, Page-Level, LLM-Friendly</text>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#1a5fb4"/>
+    </marker>
+  </defs>
+</svg>

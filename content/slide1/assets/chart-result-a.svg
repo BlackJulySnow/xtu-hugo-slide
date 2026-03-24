@@ -1,0 +1,13 @@
+<svg width="800" height="460" viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="460" fill="#f8fbff"/>
+  <text x="60" y="58" fill="#003d82" font-size="28" font-family="Arial, sans-serif" font-weight="700">Result A: Accuracy Trend</text>
+  <line x1="80" y1="360" x2="740" y2="360" stroke="#8ca9cb" stroke-width="2"/>
+  <line x1="80" y1="100" x2="80" y2="360" stroke="#8ca9cb" stroke-width="2"/>
+  <polyline points="120,320 230,280 340,240 450,205 560,180 670,150" fill="none" stroke="#1a5fb4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="120" cy="320" r="8" fill="#1a5fb4"/>
+  <circle cx="230" cy="280" r="8" fill="#1a5fb4"/>
+  <circle cx="340" cy="240" r="8" fill="#1a5fb4"/>
+  <circle cx="450" cy="205" r="8" fill="#1a5fb4"/>
+  <circle cx="560" cy="180" r="8" fill="#1a5fb4"/>
+  <circle cx="670" cy="150" r="8" fill="#1a5fb4"/>
+</svg>

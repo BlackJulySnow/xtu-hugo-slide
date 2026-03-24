@@ -1,0 +1,48 @@
+{{ define "main" }}
+{{ $decks := sort .Site.Sections ".Params.report_date" "desc" }}
+{{ $summary := newScratch }}
+{{ $summary.Set "totalPages" 0 }}
+{{ range $decks }}
+  {{ $summary.Add "totalPages" (len .RegularPages) }}
+{{ end }}
+{{ $deckCount := len $decks }}
+<main class="xtu-pm-main">
+  <header class="xtu-pm-home-info">
+    <h1 class="xtu-pm-title">{{ .Site.Title }}</h1>
+    <p class="xtu-pm-subtitle">{{ or .Site.Params.subtitle "Xiangtan University Slide Collections" }}</p>
+    <div class="xtu-pm-stats">
+      <span>{{ $deckCount }} Decks</span>
+      <span>{{ $summary.Get "totalPages" }} Pages</span>
+      <span>16:9 Slides</span>
+    </div>
+  </header>
+
+  <section class="xtu-pm-list">
+    {{ if eq $deckCount 0 }}
+      <article class="xtu-pm-empty">
+        <p>暂无可展示的 deck，创建内容后会自动出现在这里。</p>
+      </article>
+    {{ end }}
+
+    {{ range $idx, $deck := $decks }}
+      {{ $slides := sort $deck.RegularPages ".Params.order" }}
+      {{ $presenter := or $deck.Params.presenter $.Site.Params.presenter $.Site.Params.author "未设置" }}
+      {{ $reportDate := or $deck.Params.report_date $.Site.Params.report_date (now.Format "2006-01-02") }}
+
+      <a class="xtu-pm-entry" style="--entry-delay: {{ mul $idx 50 }}ms;" href="{{ $deck.RelPermalink }}">
+        <h2 class="xtu-pm-entry-title">{{ $deck.Title }}</h2>
+        {{ with $deck.Params.summary }}
+          <p class="xtu-pm-entry-summary">{{ . }}</p>
+        {{ else }}
+          <p class="xtu-pm-entry-summary">该报告未设置摘要，点击卡片可进入封面页并继续播放。</p>
+        {{ end }}
+        <p class="xtu-pm-entry-meta">
+          <span>汇报人：{{ $presenter }}</span>
+          <span>日期：{{ $reportDate }}</span>
+          <span>{{ len $slides }} 页</span>
+        </p>
+      </a>
+    {{ end }}
+  </section>
+</main>
+{{ end }}

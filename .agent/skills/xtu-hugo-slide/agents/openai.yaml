@@ -1,0 +1,7 @@
+interface:
+  display_name: "Hugo Slide"
+  short_description: "Maintain this repo's Hugo slide workflow."
+  default_prompt: "Use $hugo-slide to maintain the xtu-hugo-sample Hugo slide project in this repository."
+
+policy:
+  allow_implicit_invocation: true
