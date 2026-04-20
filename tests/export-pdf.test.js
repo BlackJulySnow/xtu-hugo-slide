@@ -202,3 +202,33 @@ test('content markdown does not contain level-1 headings', () => {
   const offenders = files.filter((filePath) => /^# /m.test(fs.readFileSync(filePath, 'utf8')));
   assert.deepEqual(offenders, []);
 });
+
+test('260401 EnergyRetro-KGR deck includes experiment progress slides after page 7', () => {
+  const deckRoot = path.resolve(__dirname, '..', 'content', '260401-EnergyRetro-KGR');
+  const expected = [
+    {
+      file: '08-experiment-data-overview.md',
+      order: 8,
+      title: '实验进展: 多源数据集构建现状',
+    },
+    {
+      file: '09-experiment-ord-dimensions.md',
+      order: 9,
+      title: '核心数据源 I: ORD 的反应条件维度',
+    },
+    {
+      file: '10-experiment-bkms-statistics.md',
+      order: 10,
+      title: '核心数据源 II: BKMS 酶促反应分类统计',
+    },
+  ];
+
+  for (const slide of expected) {
+    const fullPath = path.join(deckRoot, slide.file);
+    assert.ok(fs.existsSync(fullPath), `${slide.file} should exist`);
+
+    const content = fs.readFileSync(fullPath, 'utf8');
+    assert.match(content, new RegExp(`order:\\s*${slide.order}`));
+    assert.match(content, new RegExp(`subsection_title:\\s*"${slide.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+  }
+});
