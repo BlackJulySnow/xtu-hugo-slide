@@ -7,18 +7,18 @@ order: 7
 
 ### 1. 图密度（Graph Density）
 
-**Density = 0.000099** (V=26,280, E=68,463)
+**Density = 0.000001** (V=4.45M, E=12.84M)
 
 高密度意味着分子、反应与酶之间的关联更丰富，有利于多步推理。
 
 ### 2. 结构多样性（Structural Diversity）
 
-**Von Neumann Entropy（冯诺依曼商） = 10.57 bits**
+**Von Neumann Entropy（冯诺依曼熵） = 14.52 bits**
 
-Max Degree: 2521 | Super Nodes: 67 (0.57%)
+Max Degree: 461,560 | Super Nodes: 603 (0.03%)
 
 评估图谱是否过于集中在少数"超级节点"上。
 
 ### 3. 连通性与孤儿率（Connectivity & Orphan Rate）
 
-**Orphan Rate: 0.01%** (无前驱体 0.00%, 无产物 0.01%)
+**Orphan Rate: 0.01%** (无前驱体 0.00%, 无子节点 0.01%)
