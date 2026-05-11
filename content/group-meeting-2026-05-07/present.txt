@@ -1,0 +1,36 @@
+=== Slide 封面 ===
+老师好，今天我汇报的是 EnergyRetro-KGR 多步逆合成算法的最新进展。这次汇报重点回复上次组会的两个反馈：一是明确 benchmark 和 baseline，二是说清楚我们到底在做什么内容。
+
+=== Slide 01: Benchmark 与 Baseline ===
+先回复第一个反馈。Benchmark 方面，我们选用 USPTO-50k 作为单步逆合成的训练与评测数据集，同时用 USPTO-multistep-190 这个多步评测集来覆盖有机合成和酶催化双场景，它提供了标准化的路线深度和可购买原料标注。
+Baseline 分为单步和多步两类。单步逆合成包括 template-based、semi-template 和 template-free 三类方法；多步逆合成对比 RetroRollout*、Retro* 和 MCTS-Retro。评测指标采用 Route Top-k、Solved Rate、Valid Step 和 Avg. Steps。
+
+=== Slide 02: 到底做什么内容 ===
+第二个反馈是关于工作内容不清晰。我们的工作分两层：单步逆合成和多步逆合成。
+单步逆合成是基础模块，解决"一个分子怎么断键"的问题；多步逆合成是核心创新，解决"从目标分子到可购买原料的路径怎么找"的问题。单步 Agent 是多步算法的原子操作，多步算法在此基础上做全局路线规划与决策。
+
+=== Slide 03: 单步逆合成 ===
+先看第一层，KG-Energy Agent 单步逆合成。输入一个目标分子的 SMILES，输出 Top-k 高质量候选单步反应。
+它有三个核心组件：第一是分层 KG/RAG 检索，从 Exact 到 Canonical 到 Similarity 再到 Substructure，四级 fallback；第二是 Energy-Enzyme Critic，综合 BDE、反应合理性、酶分类和条件兼容性进行打分；第三是 Single-step Solver Committee，多策略并行生成候选反应。这样设计的目的是避免传统模型生成"看起来像反应但化学上不合理"的候选。
+
+=== Slide 04: 多步逆合成 ===
+第二层是 EnergyRetro-KGR 多步逆合成算法。输入目标分子，输出完整的多步合成路线。
+四大核心机制：AND-OR Tree Search 做树形搜索，KG-guided Selection 用知识-能量价值函数选择最优节点，Shallow Rollout 加 Sibling Jump 做浅层模拟并在失败时跳转兄弟节点，Memory Agent 记录搜索经验避免重复犯错。
+
+=== Slide 05: 整体框架 ===
+这张图展示了 EnergyRetro-KGR 的完整框架。大家可以看到，搜索过程在一个 AND-OR 树上进行，圆形节点代表分子节点，方形节点代表反应节点。蓝色路径是当前激活的搜索路径。整个算法按照 Selection、Expansion、Rollout & Critic、Update 四个阶段循环执行。
+
+=== Slide 06: Selection ===
+第一阶段 Selection。我们在所有候选分子节点中选择综合价值最低的节点进行扩展，也就是 arg min V_all。这个价值函数综合考虑了知识图谱证据、分子相似性、能量先验、酶反应可能性和历史搜索反馈，所以不是随机选择，而是由知识-能量联合价值函数引导的。
+
+=== Slide 07: Expansion ===
+第二阶段 Expansion，知识引导的节点扩展。选中节点后，首先进行分层 KG/RAG 检索，从 Exact Match 到 Substructure Retrieval 四级 fallback，然后构建 Evidence Pack，再由 Strategy Controller 选择搜索策略，最后生成候选反应。搜索策略包括 Organic-first、Enzyme-first、Hybrid-switch 和 Substructure fallback 四种。
+
+=== Slide 08: Rollout & Critic ===
+第三阶段 Rollout & Critic。我们对候选反应做一到三步的浅层模拟，快速判断路线前景，同时设置最大深度限制来防止组合爆炸。模拟后由 Energy-Enzyme Critic 从 BDE、Plausibility、EC Recommendation 和 Condition Compatibility 四个维度打分，然后在局部选择价值最优的分支。
+
+=== Slide 09: Update ===
+第四阶段 Update。根据评价结果更新节点价值：成功接近可购买原料就降低路径价值，能量不合理就提高惩罚。如果当前节点失败，我们不完全回溯，而是做 KG-guided Sibling Jump，跳转到结构或机制相关的兄弟节点继续尝试。同时 Memory Agent 记录成功、失败和困难负样本，让整个系统具备搜索经验积累的能力。
+
+=== 结束语 ===
+以上就是本次汇报的全部内容，主要回复了 benchmark 和 baseline 的明确问题，以及我们工作的两层体系，并详细介绍了多步算法的四个核心阶段。谢谢老师，请批评指正。
