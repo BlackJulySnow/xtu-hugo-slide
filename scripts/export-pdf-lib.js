@@ -182,16 +182,21 @@ function getExportViewport(configPath) {
 }
 
 function readDeckJson(projectRoot, deckName) {
-  const dataPath = path.join(projectRoot, 'data', 'decks', `${deckName}.json`);
-  if (!fs.existsSync(dataPath)) {
-    throw new Error(`Deck JSON not found: ${dataPath}. Run preprocess first.`);
+  // Parse content.md directly instead of reading pre-generated JSON
+  const contentPath = path.join(projectRoot, 'content', deckName, 'content.md');
+  if (!fs.existsSync(contentPath)) {
+    throw new Error(`content.md not found: ${contentPath}`);
   }
-  const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+  const raw = fs.readFileSync(contentPath, 'utf-8');
+  const slideCount = (raw.match(/\norder:\s*\d+\n/g) || []).length;
+  // Extract title from first frontmatter block
+  const titleMatch = /^title:\s*(.+)$/m.exec(raw);
+  const presenterMatch = /^presenter:\s*(.+)$/m.exec(raw);
   return {
-    title: data.title || '',
-    presenter: data.presenter || '',
-    slides: data.slides || [],
-    totalSlides: (data.slides || []).length,
+    title: titleMatch ? titleMatch[1].trim() : '',
+    presenter: presenterMatch ? presenterMatch[1].trim() : '',
+    slides: [],
+    totalSlides: slideCount,
   };
 }
 
