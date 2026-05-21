@@ -5,9 +5,12 @@
   "description": "XTU slide-style Hugo sample project",
   "scripts": {
     "clean": "rm -rf public resources",
-    "build": "hugo --cleanDestinationDir",
-    "export-pdf": "node scripts/export-pdf.js",
-    "dev": "hugo server -D",
+    "preprocess": "node scripts/slide-preprocessor.js",
+    "preprocess:clean": "node scripts/slide-preprocessor.js --clean",
+    "preprocess:migrate": "node scripts/slide-preprocessor.js --migrate",
+    "build": "npm run preprocess && hugo --cleanDestinationDir",
+    "export-pdf": "npm run preprocess && node scripts/export-pdf.js",
+    "dev": "npm run preprocess && hugo server -D",
     "new": "hugo new slide1/new-slide.md",
     "test": "node --test"
   },

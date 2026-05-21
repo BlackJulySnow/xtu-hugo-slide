@@ -1,0 +1,71 @@
+{
+  "title": "EnergyRetro-KGR 多步逆合成算法进展汇报",
+  "presenter": "刘晴瑞",
+  "report_date": "2026-05-07",
+  "summary": "回复上次组会反馈，明确 benchmark/baseline 与工作内容；详细介绍基于 KG-Energy 的 Agent 单步方法及 EnergyRetro-KGR 多步逆合成算法框架。",
+  "slides": [
+    {
+      "order": 1,
+      "section_key": "feedback",
+      "section_title": "反馈回复",
+      "subsection_title": "1、Benchmark 与 Baseline",
+      "body": "**Benchmark 选用**\n\n- **USPTO-50k**：经典单步逆合成数据集，用于模型训练与单步评测\n- **USPTO-multistep-190**：覆盖有机合成场景，提供标准化路线深度与可购买原料标注\n\n**Baseline 方法**\n\n| 类别 | 方法 | 评价指标 |\n| --- | --- | --- |\n| 单步逆合成 | template-based, semi-template, template-free | Top-k accuracy |\n| 多步逆合成 | RetroRollout*、Retro*、MCTS-Retro | Route Top-k、Solved Rate、Valid Step、Avg. Steps |\n"
+    },
+    {
+      "order": 2,
+      "section_key": "feedback",
+      "section_title": "反馈回复",
+      "subsection_title": "2、到底做什么内容",
+      "body": "**两层工作体系**\n\n| 层次 | 名称 | 核心问题 |\n| --- | --- | --- |\n| 单步逆合成 | KG-Energy Agent 单步逆合成 | 一个分子怎么断键？ |\n| 多步逆合成 | EnergyRetro-KGR 多步算法 | 从目标分子到原料的路径怎么找？ |\n\n**单步逆合成定位**\n\n- 基础模块，给定目标分子输出 Top-k 高质量单步反应\n- 解决\"断键\"这个原子问题\n\n**多步逆合成定位**\n\n- 核心创新，基于单步能力搜索完整多步合成路线\n- 解决\"路线规划\"这个全局问题\n\n**关系**\n\n单步 Agent 是多步算法的\"原子操作\"，多步算法负责全局决策\n"
+    },
+    {
+      "order": 3,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "第一层：KG-Energy Agent 单步逆合成",
+      "body": "**输入**：目标分子 SMILES\n**输出**：Top-k 候选单步逆合成反应（含反应物、条件、类型）\n\n**三大核心组件**\n\n| 组件 | 功能 |\n| --- | --- |\n| Layered KG/RAG 检索 | Exact → Canonical → Similarity → Substructure 四级 fallback |\n| Energy-Enzyme Critic | 综合 BDE、反应合理性、酶分类（EC）、条件兼容性打分 |\n| Single-step Solver Committee | 多策略并行生成候选反应 |\n\n![KG-Energy Agent](assets/2026-04-09-06-39-16-single-step-horizontal-paper.png \"w=80%\")\n"
+    },
+    {
+      "order": 4,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "多步逆合成：EnergyRetro-KGR",
+      "body": "**输入**：目标分子\n**输出**：完整多步合成路线\n\n**四大核心机制**\n\n| 机制 | 作用 |\n| --- | --- |\n| AND-OR Tree Search | 圆形 = 分子节点（OR），方形 = 反应节点（AND） |\n| KG-guided Selection | 基于知识-能量价值函数选择最优扩展节点 |\n| Shallow Rollout + Sibling Jump | 浅层模拟避免组合爆炸，失败时跳转兄弟节点 |\n| Memory Agent | 记录成功/失败/困难负样本，避免重复搜索 |\n\n**与单步逆合成的关系**\n\n单步 Agent 提供\"断键\"能力，多步算法在此基础上做全局路线规划与决策\n"
+    },
+    {
+      "order": 5,
+      "section_key": "algorithm",
+      "section_title": "算法框架",
+      "subsection_title": "EnergyRetro-KGR 整体框架",
+      "body": "<!-- **四阶段主循环**\n\n```text\n(a) Selection → (b) Expansion → (c) Rollout & Critic → (d) Update\n``` -->\n\n- **圆形节点**：分子节点（OR）—— 选择一种反应即可\n- **方形节点**：反应节点（AND）—— 所有前体都必须解决\n- **蓝色路径**：当前激活的搜索路径\n- **Lower is better**：价值分数越低，路线越有前景\n\n![EnergyRetro-KGR Framework](assets/framework.png \"w=60%\")\n"
+    },
+    {
+      "order": 6,
+      "section_key": "algorithm",
+      "section_title": "算法框架",
+      "subsection_title": "(a) Selection：选择最值得扩展的节点",
+      "body": "> **arg min V_all**\n>\n> 在所有候选分子节点中，选择综合价值最低的节点进行扩展\n\n**KG-Energy Value Function 综合考虑，由知识-能量联合价值函数引导**\n\n- 知识图谱证据（KG 中是否有已知反应/相似分子）\n- 分子相似性与反应中心特征\n- 能量先验（BDE、ΔG 趋势）\n- 酶反应可能性（EC 分类匹配）\n- 历史搜索反馈（Memory 中的失败惩罚）\n"
+    },
+    {
+      "order": 7,
+      "section_key": "algorithm",
+      "section_title": "算法框架",
+      "subsection_title": "(b) Expansion：知识引导的节点扩展",
+      "body": "**扩展流程**\n\n```text\n选中分子 → Layered KG/RAG 检索 → Evidence Pack → Strategy Controller → 候选反应\n```\n\n**四级检索 fallback**\n\n| 层级 | 匹配方式 |\n| --- | --- |\n| Exact Match | SMILES 完全匹配 |\n| Canonical Match | 标准化后匹配 |\n| Similarity Retrieval | Morgan fingerprint 相似 |\n| Substructure Retrieval | 子结构 / 官能团 fallback |\n\n**四种搜索策略**\n\n- **Organic-first**：优先传统有机逆合成\n- **Enzyme-first**：优先酶催化路径\n- **Hybrid-switch**：有机与酶动态切换\n- **Substructure fallback**：整分子失败时退回子结构推理\n"
+    },
+    {
+      "order": 8,
+      "section_key": "algorithm",
+      "section_title": "算法框架",
+      "subsection_title": "(c) Rollout & Critic：模拟与评价",
+      "body": "**Shallow KG-guided Rollout**\n\n- 对候选反应做 **1~3 步浅层模拟**，快速判断路线前景\n- 设置最大深度限制（Route / Simulation / Expansion），防止组合爆炸\n- 利用 KG 检索结果引导模拟方向，而非盲目展开\n\n**Energy-Enzyme Critic 四维度打分**\n\n| 信号 | 作用 |\n| --- | --- |\n| BDE | 断键是否合理 |\n| Plausibility | 反应化学上是否可行 |\n| EC Recommendation | 是否对应已知酶类别 |\n| Condition Compatibility | 反应条件是否兼容 |\n\n> **arg min V_sub**：在局部 rollout 中选择价值最优分支\n"
+    },
+    {
+      "order": 9,
+      "section_key": "algorithm",
+      "section_title": "算法框架",
+      "subsection_title": "(d) Update：节点更新与经验记忆",
+      "body": "**Route Node Update**\n\n- 成功接近可购买原料 → 降低路径价值（更优）\n- 能量不合理 / 条件冲突 → 提高惩罚\n- 酶反应有 EC 支持 → 提高优先级\n\n**KG-guided Sibling Jump Search**\n\n- 当前节点失败时，不完全回溯\n- 跳转到结构或机制相关的兄弟节点继续尝试\n- 减少无效搜索，提高路线探索效率\n\n**Memory Agent**\n\n| 类型 | 用途 |\n| --- | --- |\n| Success | 成功路线片段，正向引导 |\n| Failure | 失败路线，避免重复 |\n| Hard Negatives | 看似合理实际不可行，训练更强判别 |\n"
+    }
+  ]
+}

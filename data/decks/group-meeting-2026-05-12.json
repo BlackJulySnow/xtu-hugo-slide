@@ -1,0 +1,36 @@
+{
+  "title": "本周工作进展汇报",
+  "presenter": "刘晴瑞",
+  "report_date": "2026-05-12",
+  "summary": "汇报本周实验进展：baseline 复现、多数据集运行、代码 bug 修复，以及框架图绘制和多步逆合成实验状态。",
+  "slides": [
+    {
+      "order": 1,
+      "section_key": "experiments",
+      "section_title": "实验进展",
+      "subsection_title": "1、本周实验概览",
+      "body": "**本周主要工作**\n\n- 跑完 3 个数据集的实验\n- 协助师兄复现 2 个 baseline 方法\n- 修复 baseline 代码中的 bug（梯度爆炸等问题）\n- 框架图绘制与修改中\n- 多步逆合成消融实验进行中\n"
+    },
+    {
+      "order": 2,
+      "section_key": "experiments",
+      "section_title": "实验进展",
+      "subsection_title": "2、协助师兄跑实验",
+      "body": "**协助师兄复现 Baseline**\n\n- 复现 LiTEN 和 MGNN 两个 baseline 方法\n- 在 MD22、QM9、MD17 三个数据集上完成了实验运行\n- 修复了 baseline 代码中的 bug（梯度爆炸等问题），实验已可正常运行\n\n| 数据集 | LiTEN | MGNN |\n| --- | --- | --- |\n| MD22 | 已完成 | 已完成 |\n| QM9 | 已完成 | 已完成 |\n| MD17 | 已完成 | 已完成 |\n"
+    },
+    {
+      "order": 3,
+      "section_key": "framework",
+      "section_title": "框架图",
+      "subsection_title": "3、框架图绘制进展",
+      "body": "- 框架图正在调整和完善\n\n![框架图](assets/framework.png \"w=80%\")\n"
+    },
+    {
+      "order": 4,
+      "section_key": "multistep",
+      "section_title": "多步逆合成",
+      "subsection_title": "4、多步逆合成实验进展",
+      "body": "**消融实验进行中**\n\n| 组别 | 权重 |\n| --- | --- |\n| KnowledgeGraph | KG=1.0 |\n| Energy Prior | Energy=0.8 |\n| Enzyme | Enzyme=0.2 |\n| Memory | Memory=0.3 |\n| Rollout | Rollout=0.4 |\n"
+    }
+  ]
+}

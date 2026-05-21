@@ -1,0 +1,113 @@
+{
+  "title": "Energy Core Agent Group Meeting",
+  "presenter": "Energy Core Agent Group",
+  "report_date": "2026-03-05",
+  "summary": "以 BDE/BDFE 为核心语义，面向逆合成、代谢位点、酶反应性与结合自由能排序的多 Agent 统一研究方案。",
+  "slides": [
+    {
+      "order": 1,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "选题背景：为什么做“能量核心Agent”",
+      "body": "本次汇报定位：**选题汇报**，目标是提出可落地的研究方案，而非汇报已完成实验结果。\n\n- 近两年 Agent 能力快速增强，已经具备任务编排、工具调用、反思纠错的工程基础。\n- 生物化学下游任务（逆合成、代谢位点、酶反应性、结合自由能）长期分散，难以复用。\n- BDE/BDFE 提供跨任务的统一“能量语言”，适合做核心中枢。\n\n![Agent能力与化学任务融合趋势图](assets/ai-chemistry-research.jpg \"Agent能力与化学任务融合趋势图\")\n"
+    },
+    {
+      "order": 2,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "背景任务1：BDE驱动的Retrosynthesis（主线）",
+      "body": "任务定位：给定目标分子，自动生成可执行的逆合成路径，并优先选择热力学更合理的断键步骤。\n\n- 为什么关键：逆合成是化学合成设计的核心场景，直接决定路线长度、成本与可实现性。\n- BDE价值：将“断哪根键”转化为可量化的能量排序问题，减少低可行性候选。\n- 任务输入：目标分子、反应模板库、可用试剂与条件约束。\n- 任务输出：候选路径、每步断键解释、置信度与替代路线。\n- 典型指标：Top-k断键命中率、路径成功率、平均步骤数、计算成本。\n\n![逆合成中的断键优先级（BDE）](assets/bond-dissociation-energy.jpg \"逆合成中的断键优先级（BDE）\")\n"
+    },
+    {
+      "order": 3,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "背景任务2：代谢位点预测（Metabolism SoM）",
+      "body": "任务定位：预测分子在生物体内更可能发生代谢反应的位置（如CYP450相关位点）。\n\n- 为什么关键：代谢位点直接影响药物半衰期、毒性风险与成药性优化方向。\n- BDE价值：较低BDE位点往往更易发生H抽取/氧化，能作为位点排序的重要先验。\n- 任务输入：分子结构、酶环境上下文、可选实验约束。\n- 任务输出：位点排序、风险标签与可解释能量证据。\n- 典型指标：Top-1/Top-k命中率、PR-AUC、跨化学空间泛化能力。\n\n![代谢反应场景示意](assets/drug-metabolism.jpg \"代谢反应场景示意\")\n"
+    },
+    {
+      "order": 4,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "背景任务3：酶催化反应性与位点选择",
+      "body": "任务定位：在给定酶-底物体系下，预测更可能发生反应的位点与反应类型。\n\n- 为什么关键：用于酶工程、定向进化与生物催化路线优化。\n- BDE/BDFE价值：统一描述局部键强弱与H转移热力学能力，提高机制解释一致性。\n- 任务输入：蛋白残基微环境、底物结构、反应条件。\n- 任务输出：位点优先级、机理解释、候选突变方向。\n- 典型指标：位点排序相关性、反应类型判别准确率、解释一致性评分。\n\n![酶催化与反应活性场景](assets/enzyme-catalysis.jpg \"酶催化与反应活性场景\")\n"
+    },
+    {
+      "order": 5,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "背景任务4：结合自由能排序（Binding FE）",
+      "body": "任务定位：对蛋白-配体候选集合进行热力学排序，辅助先导化合物优选。\n\n- 为什么关键：决定筛选效率，是药物发现中连接计算与实验的关键环节。\n- 与能量核心关系：把BDE/BDFE语义与\\(\\Delta G\\)评估对齐，提升跨任务一致性。\n- 任务输入：复合物构象、候选分子集合、模拟参数约束。\n- 任务输出：候选排名、误差估计、可解释热力学因子。\n- 典型指标：Spearman/Pearson相关、RMSE、命中率提升与单位成本收益。\n\n![蛋白质-配体相互作用可视化（来源：调研文档）](https://kimi-web-img.moonshot.cn/img/blog.molcalx.com.cn/f846936517a1bdcf22b0ca142d4dbb8164a698b0.png \"蛋白质-配体相互作用可视化（来源：调研文档）\")\n"
+    },
+    {
+      "order": 6,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "问题定义：从单任务工具到统一任务中枢",
+      "body": "当前痛点可归纳为三类：\n\n| 痛点 | 当前常见做法 | 关键不足 |\n| --- | --- | --- |\n| 任务割裂 | 每个任务单独建模 | 难迁移、难维护 |\n| 能量语义不统一 | BDE/BDFE/ΔG各用各的 | 决策标准不一致 |\n| 实验评估不对齐 | 指标体系不统一 | 无法比较系统级收益 |\n\n本课题核心问题：\n\n1. 能否构建一个**能量核心Agent**，统一表示与推理 BDE/BDFE 相关知识？\n2. 能否通过任务适配器，把该能力稳定迁移到四类下游任务？\n3. 能否用统一实验协议评估“核心中枢”带来的真实增益？\n"
+    },
+    {
+      "order": 7,
+      "section_key": "introduction",
+      "section_title": "Introduction",
+      "subsection_title": "文献亮点与本选题创新点",
+      "body": "文献侧可复用结论（来自调研资料）：\n\n- ALFABET 证明 BDE 可被图模型高效预测，并服务代谢位点等任务。\n- 大规模 FEP/ABFE 工作验证了自由能方法在药物任务中的工程价值。\n- BDFE 体系可把 pKa 与 E° 统一到同一个热力学标尺中。\n\n本选题的创新定位：\n\n| 维度 | 现有研究 | 本方案 |\n| --- | --- | --- |\n| 目标 | 单任务最优 | 跨任务统一中枢 |\n| 表示 | 各任务特征独立 | 能量核心共享表示 |\n| 调度 | 静态流程 | 多Agent动态编排 |\n| 评估 | 单任务指标 | 统一协议+跨任务对照 |\n\n结论：本课题的创新不是“再做一个模型”，而是构建**可复用的能量核心系统能力**。\n"
+    },
+    {
+      "order": 8,
+      "section_key": "method",
+      "section_title": "Method",
+      "subsection_title": "方法总览：任务驱动的统一架构路线",
+      "body": "总体路线分三层：\n\n1. **任务层**：输入具体任务目标与约束（如逆合成路径长度、反应可行性、候选筛选成本）。\n2. **核心层**：Energy Core Agent 提供统一能量判别能力（BDE/BDFE 语义与不确定性估计）。\n3. **执行层**：各领域 Agent 负责任务特定推理与工具调用，返回可评估输出。\n\n关键思想：\n\n- 用统一能量语义替代“任务各自为政”的特征体系。\n- 用 Orchestrator 把“目标拆解、调用顺序、反馈回路”工程化。\n- 用 Evaluator 与共享记忆形成持续改进闭环。\n\n<!-- ![分子图表示与任务迁移示意](assets/molecular-gnn-structure.jpg \"分子图表示与任务迁移示意\") -->\n"
+    },
+    {
+      "order": 9,
+      "section_key": "method",
+      "section_title": "Method",
+      "subsection_title": "系统架构：能量核心虚拟实验室 Multi-Agent",
+      "body": "架构职责拆分：\n\n- **Orchestrator Agent**：任务解析、子目标分解、Agent路由。\n- **Energy Core Agent**：统一能量表示、可行性打分、不确定性控制。\n- **Domain Agents**：Retrosynthesis / Metabolism / Protein Reactivity / Binding FE。\n- **Evaluator + Shared Memory**：自动评估、经验回写、失败模式复盘。\n\n![能量核心虚拟实验室Multi-Agent系统框架图（用户指定版本）](assets/energy-core-virtual-lab-architecture.png \"能量核心虚拟实验室Multi-Agent系统框架图（用户指定版本）\")\n"
+    },
+    {
+      "order": 10,
+      "section_key": "method",
+      "section_title": "Method",
+      "subsection_title": "关键技术细节（一）：能量核心与任务适配器",
+      "body": "Energy Core Agent 的核心输入输出：\n\n| 模块 | 输入 | 输出 |\n| --- | --- | --- |\n| Energy Encoder | 分子/反应图、上下文约束 | 统一能量嵌入向量 |\n| Feasibility Scorer | 候选断键/位点/构象 | 可行性分数+置信区间 |\n| Constraint Checker | 化学规则、反应条件 | 违规标记与修正建议 |\n\n任务适配策略：\n\n- Retrosynthesis：把“断键候选排序”映射为能量引导搜索问题。\n- Metabolism：把“代谢位点排名”映射为能量脆弱性评估。\n- Protein Reactivity：把“反应位点选择”映射为局部能量变化解释。\n- Binding FE：把“结合自由能排序”映射为热力学一致性判别。\n\n说明：本阶段只定义方法与接口，不报告实验结果。\n"
+    },
+    {
+      "order": 11,
+      "section_key": "method",
+      "section_title": "Method",
+      "subsection_title": "关键技术细节（二）：虚拟实验室执行闭环",
+      "body": "闭环执行流程：\n\n1. 任务请求进入 Orchestrator，生成任务图与调用计划。\n2. Energy Core 对候选方案给出“能量可行性 + 不确定性”双输出。\n3. Domain Agent 执行任务特定推理并返回候选解。\n4. Evaluator 按统一指标打分，Shared Memory 回写成功/失败轨迹。\n5. 下一轮调用优先利用高价值经验，提升稳定性与效率。\n\n![BDE断裂机理图（用于解释断键优先级）](assets/bond-cleavage-mechanism.jpg \"BDE断裂机理图（用于解释断键优先级）\")\n\n![热力学关系图（用于统一BDE/BDFE语义）](assets/thermodynamics-diagram.jpg \"热力学关系图（用于统一BDE/BDFE语义）\")\n"
+    },
+    {
+      "order": 12,
+      "section_key": "experiment",
+      "section_title": "Experiment",
+      "subsection_title": "实验方案总则：统一协议与对照设置",
+      "body": "本汇报仅给出实验方案，不给结果。\n\n统一协议设计：\n\n- 数据拆分：按任务分别设 Train/Valid/Test，并增加跨任务迁移评测集。\n- 对照基线：\n  1. 无Energy Core的独立任务Agent。\n  2. 仅规则或仅单模型方法。\n  3. 我们的统一中枢 Multi-Agent 方案。\n- 统一评估：任务指标 + 系统指标（推理时延、成功率、稳定性）。\n- 消融实验：移除能量核心、移除记忆模块、移除不确定性估计，观察性能变化。\n\n目标：证明“统一能量核心”在多任务场景下的可迁移性与工程收益。\n"
+    },
+    {
+      "order": 13,
+      "section_key": "experiment",
+      "section_title": "Experiment",
+      "subsection_title": "重点实验：BDE驱动的Retrosynthesis方案",
+      "body": "主线任务定义：\n\n- 输入：目标分子、反应约束、可用反应模板库。\n- 输出：逆合成路径与每一步断键决策解释。\n\n实验设计：\n\n| 组件 | 方案 |\n| --- | --- |\n| 候选生成 | 模板法 + 规则法 + Agent检索增强 |\n| 候选排序 | 加入 BDE 引导的断键优先级打分 |\n| 评价指标 | Top-k断键命中率、路径可行率、平均步骤数、推理成本 |\n| 对照 | 无BDE排序 / 仅规则打分 / 统一能量核心方案 |\n\n预期验证点：BDE 引导是否能在不增加过多成本的前提下，提高关键断键决策质量。\n\n<!-- ![键解离能在逆合成中的断键决策示意](assets/bond-dissociation-energy.jpg \"键解离能在逆合成中的断键决策示意\") -->\n"
+    },
+    {
+      "order": 14,
+      "section_key": "experiment",
+      "section_title": "Experiment",
+      "subsection_title": "其余下游任务实验：代谢、酶反应性、结合自由能",
+      "body": "三类任务均复用同一 Energy Core Agent，仅替换任务适配器。\n\n| 任务 | 输入 | 指标 | 目标 |\n| --- | --- | --- | --- |\n| 代谢位点预测 | 分子结构 + 酶环境约束 | 位点命中率、Top-k准确率 | 验证能量脆弱位点识别能力 |\n| 蛋白/酶反应性 | 残基环境 + 反应条件 | 位点排序相关性、解释一致性 | 验证自由基反应性推断能力 |\n| 结合自由能排序 | 蛋白-配体候选集合 | 排序相关性、误差统计 | 验证跨任务热力学一致性 |\n\n![代谢与生物化学反应场景配图](assets/drug-metabolism.jpg \"代谢与生物化学反应场景配图\")\n\n![酶催化与反应活性场景配图](assets/enzyme-catalysis.jpg \"酶催化与反应活性场景配图\")\n"
+    },
+    {
+      "order": 15,
+      "section_key": "conclusion",
+      "section_title": "Conclusion",
+      "subsection_title": "预期贡献与阶段里程碑",
+      "body": "预期贡献：\n\n1. 提出一个可复用的**能量核心Agent系统范式**，统一多任务能量语义。\n2. 给出面向生物化学任务的**统一实验协议**，支持系统级对照。\n3. 在逆合成任务上形成可解释的 BDE 引导断键决策方案。\n\n阶段计划（建议）：\n\n| 时间阶段 | 里程碑 |\n| --- | --- |\n| 第1阶段 | 完成核心模块与四个任务适配器原型 |\n| 第2阶段 | 完成统一实验协议与消融实验管线 |\n| 第3阶段 | 聚焦Retrosynthesis深度优化并撰写论文主线 |\n\n收束：本课题重点是把“强Agent能力”沉淀为可迁移的科研基础设施，而不是单点任务刷指标。\n"
+    }
+  ]
+}

@@ -1,4 +1,391 @@
 {{ define "main" }}
+{{ $deckName := .Section }}
+{{ $deckData := index $.Site.Data.decks $deckName }}
+
+{{ if $deckData }}
+{{/* ===== Single-page JS-based navigation (content.md decks) ===== */}}
+{{ $slides := sort $deckData.slides "order" }}
+{{ $presenter := or $deckData.presenter .Params.presenter .Site.Params.presenter .Site.Params.author "未设置" }}
+{{ $reportDate := or $deckData.report_date .Params.report_date .Site.Params.report_date (now.Format "2006-01-02") }}
+
+{{/* Build section list */}}
+{{ $sectionKeys := slice }}
+{{ $sections := slice }}
+{{ range $slide := $slides }}
+  {{ $key := or $slide.section_key $slide.section_title (printf "section-%d" $slide.order) }}
+  {{ if not (in $sectionKeys $key) }}
+    {{ $sectionKeys = $sectionKeys | append $key }}
+    {{ $title := or $slide.section_title (printf "Section %d" $slide.order) }}
+    {{ $sections = $sections | append (dict "key" $key "title" $title) }}
+  {{ end }}
+{{ end }}
+
+{{/* Section nav HTML (shared across all slides) */}}
+{{ $sectionNav := "" }}
+{{ range $sections }}
+  {{ $sectionNav = printf "%s<span class=\"xtu-nav-item\" data-section-key=\"%s\">%s</span>" $sectionNav .key .title }}
+{{ end }}
+
+{{/* --- Cover Page --- */}}
+<main class="xtu-cover-main is-active" data-slide-index="0">
+  <h1 class="xtu-cover-title">{{ or $deckData.title .Title }}</h1>
+  <p class="xtu-cover-meta">汇报人：{{ $presenter }} ｜ 日期：{{ $reportDate }}</p>
+</main>
+
+{{/* --- Slide Pages --- */}}
+{{ range $i, $slide := $slides }}
+  {{ $slideIndex := add $i 1 }}
+  <div class="xtu-slide-container" data-slide-index="{{ $slideIndex }}" style="display:none">
+    <header class="xtu-header">
+      <div class="xtu-title-wrap">
+        <h1 class="xtu-page-title">{{ $slide.subsection_title }}</h1>
+        <div class="xtu-title-underline"></div>
+      </div>
+      <div class="xtu-brand">
+        <div class="xtu-logo"><img src="{{ "brand/xtu-logo.svg" | relURL }}" alt="XTU Logo"></div>
+        <div class="xtu-brand-text">
+          <img src="{{ "brand/xtu-text.png" | relURL }}" alt="Xiangtan University" class="xtu-brand-cn">
+          <span class="xtu-brand-en">XiangTan University</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="xtu-main">
+      <article id="slideContent" class="xtu-card xtu-slide-card">
+        <div id="fitRoot" class="xtu-md-root">
+          {{ $.Page.RenderString $slide.body }}
+        </div>
+      </article>
+    </main>
+
+    <footer class="xtu-footer">
+      <div class="xtu-nav-sections">
+        {{ range $sections }}
+          <span class="xtu-nav-item{{ if eq .key $slide.section_key }} is-active{{ end }}" data-section-key="{{ .key }}">{{ .title }}</span>
+        {{ end }}
+      </div>
+      <div class="xtu-page-number">{{ $slideIndex }}</div>
+    </footer>
+  </div>
+{{ end }}
+
+{{/* --- Lightbox --- */}}
+<div id="xtuLightbox" class="xtu-lightbox" aria-hidden="true">
+  <button id="xtuLightboxClose" class="xtu-lightbox-close" type="button" aria-label="Close image preview">&times;</button>
+  <div class="xtu-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Image preview">
+    <img id="xtuLightboxImage" class="xtu-lightbox-image" alt="">
+    <div id="xtuLightboxCaption" class="xtu-lightbox-caption"></div>
+  </div>
+</div>
+
+{{/* --- Navigation JS --- */}}
+<script>
+(function () {
+  var totalSlides = {{ len $slides }};
+  var currentIndex = 0; // 0 = cover, 1..N = slides
+  var wheelLock = false;
+  var lightboxOpen = false;
+
+  function getSlideContainer(index) {
+    if (index === 0) return document.querySelector('.xtu-cover-main');
+    return document.querySelector('.xtu-slide-container[data-slide-index="' + index + '"]');
+  }
+
+  function showSlide(index) {
+    if (index < 0 || index > totalSlides) return;
+    var allContainers = document.querySelectorAll('.xtu-cover-main, .xtu-slide-container');
+    for (var i = 0; i < allContainers.length; i++) {
+      allContainers[i].classList.remove('is-active');
+      allContainers[i].style.display = 'none';
+    }
+    var target = getSlideContainer(index);
+    if (target) {
+      target.classList.add('is-active');
+      target.style.display = '';
+    }
+    currentIndex = index;
+
+    // Initialize slide content (media layout, captions, etc.)
+    if (index > 0) {
+      var fitRoot = target.querySelector('.xtu-md-root');
+      if (fitRoot && !fitRoot.dataset.xtuInit) {
+        fitRoot.dataset.xtuInit = '1';
+        initSlideContent(fitRoot);
+      }
+      // Re-render KaTeX for newly visible slide
+      if (typeof window._renderSlideMath === 'function') {
+        window._renderSlideMath(target);
+      }
+    }
+  }
+
+  function initSlideContent(fitRoot) {
+    // URL rewriting for absolute paths
+    var siteRoot = {{ printf "%q" (relURL "./") | safeJS }};
+    Array.prototype.forEach.call(fitRoot.querySelectorAll("img[src^='/'], a[href^='/']"), function (node) {
+      if (node.hasAttribute('src')) {
+        node.setAttribute('src', siteRoot.replace(/\/+$/, '/') + node.getAttribute('src').replace(/^\//, ''));
+      }
+      if (node.hasAttribute('href')) {
+        node.setAttribute('href', siteRoot.replace(/\/+$/, '/') + node.getAttribute('href').replace(/^\//, ''));
+      }
+    });
+    // Media layout normalization
+    normalizeMediaLayout(fitRoot);
+    ensureImageCaptions(fitRoot);
+    applyImageFillMode(fitRoot);
+    initSlideLightbox(fitRoot);
+  }
+
+  function isImageOnlyParagraph(node) {
+    return node && node.tagName === 'P' && node.textContent.trim() === '' && node.querySelectorAll('img').length > 0;
+  }
+
+  function mediaNodeForImage(img) {
+    var parent = img.parentElement;
+    if (parent && parent.tagName === 'A' && parent.childElementCount === 1 && parent.textContent.trim() === '') {
+      return parent;
+    }
+    return img;
+  }
+
+  function findAncestorByClass(node, className) {
+    var cur = node;
+    while (cur && cur !== fitRootGlobal) {
+      if (cur.classList && cur.classList.contains(className)) return cur;
+      cur = cur.parentNode;
+    }
+    return null;
+  }
+
+  function captionTextForImage(img, index) {
+    var val = (img.getAttribute('data-caption') || img.getAttribute('title') || img.getAttribute('alt') || '').trim();
+    return val || ('图示 ' + index);
+  }
+
+  function buildFigure(media, img, index) {
+    var figure = document.createElement('figure');
+    figure.className = 'xtu-figure';
+    figure.appendChild(media);
+    var caption = document.createElement('figcaption');
+    caption.className = 'xtu-figcaption';
+    caption.textContent = captionTextForImage(img, index);
+    figure.appendChild(caption);
+    return figure;
+  }
+
+  function buildMediaRow(paragraphs) {
+    var allMedia = [], allImages = [];
+    paragraphs.forEach(function (p) {
+      Array.prototype.forEach.call(p.querySelectorAll('img'), function (img) {
+        var media = mediaNodeForImage(img);
+        if (allMedia.indexOf(media) === -1) { allMedia.push(media); allImages.push(img); }
+      });
+    });
+    if (allMedia.length < 2) return null;
+    var row = document.createElement('div');
+    row.className = 'xtu-media-row' + (allMedia.length === 2 ? ' is-two' : '');
+    allMedia.forEach(function (media, idx) {
+      var item = document.createElement('div');
+      item.className = 'xtu-media-item';
+      item.appendChild(buildFigure(media, allImages[idx], idx + 1));
+      row.appendChild(item);
+    });
+    return row;
+  }
+
+  var fitRootGlobal = null;
+  function normalizeMediaLayout(fitRoot) {
+    fitRootGlobal = fitRoot;
+    var current = fitRoot.firstElementChild;
+    while (current) {
+      var next = current.nextElementSibling;
+      if (!isImageOnlyParagraph(current)) { current = next; continue; }
+      var group = [current];
+      while (next && isImageOnlyParagraph(next) && next.querySelectorAll('img').length === 1) {
+        group.push(next); next = next.nextElementSibling;
+      }
+      var row = null;
+      if (group.length >= 2) row = buildMediaRow(group);
+      else if (current.querySelectorAll('img').length >= 2) row = buildMediaRow([current]);
+      if (row) { fitRoot.insertBefore(row, group[0]); group.forEach(function (n) { n.remove(); }); }
+      current = next;
+    }
+  }
+
+  function ensureImageCaptions(fitRoot) {
+    var images = Array.prototype.slice.call(fitRoot.querySelectorAll('img'));
+    images.forEach(function (img, idx) {
+      var figure = findAncestorByClass(img, 'xtu-figure');
+      if (figure) {
+        var existing = figure.querySelector('.xtu-figcaption');
+        if (!existing) {
+          var cap = document.createElement('figcaption');
+          cap.className = 'xtu-figcaption';
+          cap.textContent = captionTextForImage(img, idx + 1);
+          figure.appendChild(cap);
+        }
+        return;
+      }
+      var media = mediaNodeForImage(img);
+      var parent = media.parentNode;
+      if (!parent) return;
+      var newFigure = buildFigure(media, img, idx + 1);
+      newFigure.classList.add('xtu-figure-standalone');
+      if (parent.tagName === 'P' && parent.textContent.trim() === '' && parent.childElementCount <= 2) {
+        parent.parentNode.insertBefore(newFigure, parent); parent.remove();
+      } else {
+        var marker = document.createTextNode('');
+        parent.insertBefore(marker, media); parent.insertBefore(newFigure, marker); parent.removeChild(marker);
+      }
+    });
+  }
+
+  function applyImageFillMode(fitRoot) {
+    var images = fitRoot.querySelectorAll('img').length;
+    if (!images) return;
+    var textBlocks = 0;
+    Array.prototype.forEach.call(fitRoot.children, function (node) {
+      if (!node || !node.tagName) return;
+      if (node.classList.contains('xtu-media-row') || node.classList.contains('xtu-figure') || node.classList.contains('xtu-figure-standalone')) return;
+      if (node.tagName === 'H1') return;
+      var txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+      if (txt.length >= 24) textBlocks += 1;
+    });
+    var hasTable = fitRoot.querySelectorAll('table').length > 0;
+    var slide = fitRoot.closest('.xtu-slide-card');
+    if (slide) slide.classList.toggle('is-image-heavy', images > 0 && textBlocks <= 2 && !hasTable);
+  }
+
+  function initSlideLightbox(fitRoot) {
+    var lightbox = document.getElementById('xtuLightbox');
+    var lightboxImage = document.getElementById('xtuLightboxImage');
+    var lightboxCaption = document.getElementById('xtuLightboxCaption');
+    var lightboxClose = document.getElementById('xtuLightboxClose');
+    if (!lightbox || !fitRoot) return;
+    Array.prototype.forEach.call(fitRoot.querySelectorAll('img'), function (img) {
+      img.classList.add('xtu-zoomable');
+      img.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var src = img.getAttribute('src');
+        if (!src) return;
+        lightboxImage.setAttribute('src', src);
+        lightboxImage.setAttribute('alt', (img.getAttribute('alt') || '').trim());
+        var figure = findAncestorByClass(img, 'xtu-figure');
+        var cap = '';
+        if (figure) { var fc = figure.querySelector('.xtu-figcaption'); if (fc) cap = fc.textContent.trim(); }
+        lightboxCaption.textContent = cap || captionTextForImage(img, 1);
+        lightbox.classList.add('is-open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('xtu-lightbox-open');
+        lightboxOpen = true;
+      });
+      var media = mediaNodeForImage(img);
+      if (media && media.tagName === 'A') media.addEventListener('click', function (e) { e.preventDefault(); });
+    });
+    if (lightboxClose) lightboxClose.addEventListener('click', function (e) { e.preventDefault(); closeLightbox(); });
+    lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLightbox(); });
+
+    function closeLightbox() {
+      lightbox.classList.remove('is-open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('xtu-lightbox-open');
+      lightboxImage.removeAttribute('src');
+      lightboxCaption.textContent = '';
+      lightboxOpen = false;
+    }
+    window._closeLightbox = closeLightbox;
+  }
+
+  function goNext() {
+    if (currentIndex < totalSlides) showSlide(currentIndex + 1);
+  }
+
+  function goPrev() {
+    if (currentIndex > 1) showSlide(currentIndex - 1);
+    else if (currentIndex === 1) showSlide(0);
+    else window.location.href = {{ printf "%q" (relURL "./") | safeJS }};
+  }
+
+  function onKeyNav(e) {
+    var key = e.key || '';
+    if (lightboxOpen) {
+      if (key === 'Escape' || key === 'Esc' || e.keyCode === 27) { e.preventDefault(); if (window._closeLightbox) window._closeLightbox(); }
+      return;
+    }
+    var right = key === 'ArrowRight' || key === 'Right' || e.keyCode === 39;
+    var down = key === 'ArrowDown' || e.keyCode === 40;
+    var left = key === 'ArrowLeft' || key === 'Left' || e.keyCode === 37;
+    var up = key === 'ArrowUp' || e.keyCode === 38;
+    if (right || down) { e.preventDefault(); goNext(); return; }
+    if (left || up) { e.preventDefault(); goPrev(); return; }
+  }
+  document.addEventListener('keydown', onKeyNav, true);
+
+  document.addEventListener('wheel', function (e) {
+    if (lightboxOpen || wheelLock) return;
+    if (Math.abs(e.deltaY) < 16) return;
+    wheelLock = true;
+    if (e.deltaY > 0) goNext(); else goPrev();
+    setTimeout(function () { wheelLock = false; }, 280);
+  }, { passive: true });
+
+  // Cover click handler
+  var cover = document.querySelector('.xtu-cover-main');
+  if (cover) {
+    cover.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a')) return;
+      goNext();
+    });
+  }
+
+  // Expose for PDF export
+  window.XtuSlideShow = showSlide;
+  window.XtuSlideTotal = totalSlides;
+})();
+</script>
+
+{{/* --- KaTeX math support --- */}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+(function () {
+  function renderSlideMath(slideContainer) {
+    if (!slideContainer || typeof renderMathInElement !== 'function') return;
+    var fitRoot = slideContainer.querySelector('.xtu-md-root');
+    if (fitRoot && !fitRoot._katexRendered) {
+      fitRoot._katexRendered = true;
+      renderMathInElement(fitRoot, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+    }
+  }
+
+  function initialRender() {
+    var slide1 = document.querySelector('.xtu-slide-container[data-slide-index="1"]');
+    if (slide1) renderSlideMath(slide1);
+  }
+
+  if (document.readyState === 'complete') {
+    initialRender();
+  } else {
+    window.addEventListener('DOMContentLoaded', initialRender);
+  }
+
+  // Expose for showSlide to call
+  window._renderSlideMath = renderSlideMath;
+})();
+</script>
+
+{{ else }}
+{{/* ===== Legacy URL-based navigation (fallback for old multi-file decks) ===== */}}
 {{ $slides := slice }}
 {{ range $page := .RegularPages }}
   {{ if not (strings.HasPrefix $page.File.Dir "docs") }}
@@ -40,28 +427,18 @@
   document.addEventListener('keydown', function (e) {
     var right = e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.keyCode === 39 || e.keyCode === 40;
     var back = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.keyCode === 37 || e.keyCode === 38;
-    if (right) {
-      e.preventDefault();
-      goNext();
-      return;
-    }
-    if (back) {
-      e.preventDefault();
-      window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }};
-    }
+    if (right) { e.preventDefault(); goNext(); return; }
+    if (back) { e.preventDefault(); window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }}; }
   });
 
   document.addEventListener('wheel', function (e) {
     if (wheelLock) return;
     if (Math.abs(e.deltaY) < 16) return;
     wheelLock = true;
-    if (e.deltaY > 0) {
-      goNext();
-    } else {
-      window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }};
-    }
+    if (e.deltaY > 0) { goNext(); } else { window.location.href = {{ printf "%q" $siteHomeUrl | safeJS }}; }
     setTimeout(function () { wheelLock = false; }, 280);
   }, { passive: true });
 })();
 </script>
+{{ end }}
 {{ end }}

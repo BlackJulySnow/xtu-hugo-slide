@@ -21,3 +21,4 @@ __pycache__/
 venv/
 .codex
 .omc/
+content/*/slide-*.md

@@ -181,11 +181,26 @@ function getExportViewport(configPath) {
   };
 }
 
+function readDeckJson(projectRoot, deckName) {
+  const dataPath = path.join(projectRoot, 'data', 'decks', `${deckName}.json`);
+  if (!fs.existsSync(dataPath)) {
+    throw new Error(`Deck JSON not found: ${dataPath}. Run preprocess first.`);
+  }
+  const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+  return {
+    title: data.title || '',
+    presenter: data.presenter || '',
+    slides: data.slides || [],
+    totalSlides: (data.slides || []).length,
+  };
+}
+
 module.exports = {
   collectDeckRouteChain,
   computeHeadingFontSizes,
   getExportViewport,
   parseArgs,
+  readDeckJson,
   resolveRoute,
   readSlideConfig,
 };

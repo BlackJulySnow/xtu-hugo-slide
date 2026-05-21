@@ -12,6 +12,7 @@ const {
   collectDeckRouteChain,
   getExportViewport,
   parseArgs,
+  readDeckJson,
   readSlideConfig,
 } = require('./export-pdf-lib');
 
@@ -194,7 +195,7 @@ async function waitForPageReady(page) {
   await page.waitForTimeout(250);
 }
 
-async function renderDeckPdfBuffers(baseUrl, routes) {
+async function renderSinglePagePdfBuffers(baseUrl, deckPublicDir, totalSlides) {
   const viewport = getExportViewport(HUGO_CONFIG_PATH);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport });
@@ -202,20 +203,32 @@ async function renderDeckPdfBuffers(baseUrl, routes) {
 
   try {
     await page.emulateMedia({ media: 'screen' });
+    const deckUrl = `${baseUrl}/${deckPublicDir}/`;
 
-    for (const route of routes) {
-      const targetUrl = `${baseUrl}${route}`;
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+    // Load the deck page
+    await page.goto(deckUrl, { waitUntil: 'domcontentloaded' });
+    await waitForPageReady(page);
+
+    // Capture cover page (slide index 0)
+    const coverBuffer = await page.pdf({
+      width: `${viewport.width}px`,
+      height: `${viewport.height}px`,
+      margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+      printBackground: true,
+      preferCSSPageSize: false,
+    });
+    buffers.push(coverBuffer);
+
+    // Capture each slide
+    for (let i = 1; i <= totalSlides; i++) {
+      await page.evaluate((index) => window.XtuSlideShow(index), i);
+      await page.waitForTimeout(300);
       await waitForPageReady(page);
+
       const pdfBuffer = await page.pdf({
         width: `${viewport.width}px`,
         height: `${viewport.height}px`,
-        margin: {
-          top: '0px',
-          right: '0px',
-          bottom: '0px',
-          left: '0px',
-        },
+        margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
         printBackground: true,
         preferCSSPageSize: false,
       });
@@ -250,7 +263,9 @@ async function main() {
   await runCommand('hugo', ['--cleanDestinationDir'], PROJECT_ROOT);
 
   const deckPublicDir = resolveDeckPublicDir(args.deck);
-  const routes = collectDeckRouteChain(PUBLIC_ROOT, deckPublicDir);
+  const deckInfo = readDeckJson(PROJECT_ROOT, args.deck);
+  const totalSlides = deckInfo.totalSlides;
+
   const outputPath = path.isAbsolute(args.output)
     ? args.output
     : path.resolve(PROJECT_ROOT, args.output);
@@ -259,14 +274,14 @@ async function main() {
 
   const server = await createStaticServer(PUBLIC_ROOT);
   try {
-    const pageBuffers = await renderDeckPdfBuffers(server.baseUrl, routes);
+    const pageBuffers = await renderSinglePagePdfBuffers(server.baseUrl, deckPublicDir, totalSlides);
     const mergedPdf = await mergePdfBuffers(pageBuffers);
     fs.writeFileSync(outputPath, mergedPdf);
   } finally {
     await server.close();
   }
 
-  console.log(`Exported ${routes.length} pages to ${outputPath}`);
+  console.log(`Exported ${totalSlides + 1} pages (cover + ${totalSlides} slides) to ${outputPath}`);
 }
 
 main().catch((error) => {

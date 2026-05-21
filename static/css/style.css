@@ -168,6 +168,16 @@ body.xtu-site.xtu-index-page {
   position: relative;
 }
 
+.xtu-slide-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .xtu-md-root {
   transform-origin: top left;
   will-change: transform;

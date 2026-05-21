@@ -1,0 +1,171 @@
+---
+title: EnergyRetro-KGR 实验进度汇报
+presenter: 刘晴瑞
+report_date: 2026-04-09
+summary: 基于当前 EnergyRetro-KGR 实验代码与结果的中文进度汇报，覆盖统一构图方案、检索增强、单步逆合成 baseline 与下游任务规划，共 12 页。
+---
+
+---
+section_key: overview
+section_title: 总览
+subsection_title: 本周进展
+order: 1
+---
+- 本周工作可以概括为三条线：`KG 构图完成`、`检索增强完成`、`single-step baseline 跑通`
+- 当前 `retro` 图谱已经整合 `BKMS + ORD`，形成统一的反应记录、化合物、酶、pathway 底座
+- 图谱规模已经达到 `2.42M ReactionRecord`、`2.02M Compound`、`12.84M` 基础关系，额外添加了 `Fragment` 层
+- staged retrieval 相比 exact match，命中从 `16%` 提升到 `100%`
+- 单步逆合成在 `USPTO50k test` 上测试结果：`Top-1 0.47`、`Top-10 0.59`
+
+| 模块 | 当前状态 | 结论 |
+| --- | --- | --- |
+| 统一构图 | 已经构图 | 图底座已经可查询 |
+| 检索增强 | 已评估 | recall 和抗噪声能力提升 |
+| single-step | 已跑通 | 先验证流程，再继续提精度 |
+
+---
+section_key: graph
+section_title: 构图
+subsection_title: 数据来源与图谱规模
+order: 3
+---
+- 数据来源分两部分：`BKMS` 提供酶催化/代谢反应，`ORD` 提供大规模有机反应实验记录
+- 当前全量导入结果：
+  `BKMS 42,345` 条反应，`ORD 2,376,120` 条反应，合计 `2,418,465 ReactionRecord`
+- 当前基础图规模为 `4.45M` 节点、`12.84M` 基础关系，已经达到真实可检索的百万/千万级别
+- 在基础图之上，还额外挂上了 `85 Fragment` 节点和 `18.89M HAS_FRAGMENT` 边，作为子结构检索层
+
+| 统计项 | 数值 |
+| --- | --- |
+| `ReactionRecord` | 2,418,465 |
+| `Compound` | 2,022,086 |
+| `Enzyme` | 7,826 |
+| `Pathway` | 3,315 |
+| `Fragment` | 85 |
+| `HAS_FRAGMENT` | 18,892,205 |
+
+<!-- ![图谱节点与关系规模](assets/graph_stats.png "w=88%") -->
+
+---
+section_key: graph
+section_title: 构图
+subsection_title: 当前构图方案
+order: 4
+---
+- 当前图模型以 `ReactionRecord` 为核心，把所有反应级证据先固定在“反应记录”这一层
+- `Compound` 只保留分子属性，例如 `canonical_smiles`、`inchikey`、`morgan fingerprint`
+- 扩展节点包括 `Enzyme`、`Pathway`、`Fragment`，分别用于酶证据、代谢上下文和子结构检索
+
+| 类型 | 当前设计 | 作用 |
+| --- | --- | --- |
+| 节点 | `ReactionRecord` | 统一承载来源与反应级上下文 |
+| 节点 | `Compound` | 跨来源共享的分子身份 |
+| 节点 | `Enzyme` | 承载酶催化证据，服务酶推荐与可行性分析 |
+| 节点 | `Pathway` | 承载代谢通路上下文，服务 pathway 预测 |
+| 节点 | `Fragment` | 基于 RDKit `85` 个 `fr_*` 规则的片段层节点 |
+| 关系 | `CONSUMES / PRODUCES` | 反应物与产物展开 |
+| 关系 | `CATALYZED_BY` | 把反应记录连接到酶证据 |
+| 关系 | `PARTICIPATES_IN_PATHWAY` | 把反应记录连接到代谢通路 |
+| 关系 | `HAS_FRAGMENT` | 把分子连接到官能团/片段层，用于子结构检索 |
+
+<!-- ![EnergyRetro-KGR 节点关系](assets/EnergyRetro-KGR.png "w=58%") -->
+
+---
+section_key: retrieval
+section_title: 检索
+subsection_title: 分层检索方案
+order: 6
+---
+- 当前单步逆合成和图查询采用分层检索
+- 检索顺序是：
+  `Exact Match -> Canonical Alignment -> FP Similarity -> Substructure`
+- 其中 `smiels`、`canonical_smiles`、`morgan fingerprint`、`fragment_counts` 参与构造检索参数
+- 每一层都保留反应来源与支持证据，后续可以继续送入 Agent Context
+
+| 层级 | 作用 | 当前价值 |
+| --- | --- | --- |
+| `exact` | 直接命中同一分子 | 精度最高，但覆盖有限 |
+| `canonical` | 解决表示差异 | 提升规范化对齐能力 |
+| `similarity` | Morgan 指纹近邻 | 解决 exact 召回不足 |
+| `substructure` | 片段/官能团级 fallback | 为更难样本留出推理空间 |
+
+---
+section_key: retrieval
+section_title: 检索
+subsection_title: 当前图谱已经支持的查询能力
+order: 8
+---
+- 当前图谱已经不仅能“存反应”，而且已经能支撑几类直接有用的查询
+- 对 retrosynthesis 来说，最关键的是 `产物 -> 生成反应 -> 前体分子` 
+- 对 bio 相关任务来说，`产物 -> 酶证据` 和 `反应 -> pathway 上下文` 
+
+| 能力 | 当前查询路径 | 说明 |
+| --- | --- | --- |
+| 反查产物生成反应 | `Compound <-[:PRODUCES]- ReactionRecord` | retrosynthesis 基础入口 |
+| 前体展开 | `Compound <- PRODUCES - ReactionRecord - CONSUMES -> Compound` | 可直接做多级逆合成扩展 |
+| 酶证据查询 | `Compound <- PRODUCES - ReactionRecord - CATALYZED_BY -> Enzyme` | 支撑酶反应推荐 |
+| pathway 上下文 | `ReactionRecord - PARTICIPATES_IN_PATHWAY -> Pathway` | 支撑通路推荐/分析 |
+| 跨来源共享产物 | 同一 `Compound` 连接 `BKMS` 与 `ORD` | 支撑有机-酶促桥接分析 |
+
+---
+section_key: single
+section_title: 单步逆合成
+subsection_title: Single-Step Pipeline
+order: 9
+---
+- 当前 `single-step` 原型已经把图检索层接进了完整流程
+- 整体流程为：
+  `LayeredRetriever -> ContextBuilder -> Solver Agents -> Critic -> Rewriter -> Selector`
+- 其中 solver 目前有五种策略：
+  `exact / canonical / similarity / substructure` / `balenced`
+- selector 最终输出的不只是一个答案，还包括：
+  `rankings`、`selection_reason`、`retrieval_summary`、`uncertainty_notes`
+
+![Single-step multi-agent pipeline](assets/2026-04-09-06-39-16-single-step-horizontal-paper.png "w=92%")
+
+---
+section_key: single
+section_title: 单步逆合成
+subsection_title: 初步评测结果
+order: 10
+---
+- 当前在GLM5上完成 `USPTO50k test` 的评测 top-k 结果为：
+  
+  `Top-1 = 0. 47`、`Top-3 = 0.51`、`Top-5 = 0.57`、`Top-10 = 0.59`
+- 从样例输出看，当前很多候选仍主要依赖 `similarity` 层支持，模型推理能力不足
+- 所以下一步重点把 retrieval 质量和 route ranking 做强，提升COT与Reasoning的能力
+
+![LLM Bench](assets/image.png "w=60%")
+
+---
+section_key: single
+section_title: 单步逆合成
+subsection_title: 当前 Bottlenecks 与优化方向
+order: 11
+---
+### 当前指标偏低，还需要提升单步逆合成反应的性能，主要考虑从下面几个方面：
+- 当前使用的 `GLM-5` 更偏 `programming / tool-use` 风格模型，结构化输出比较稳定，但在多候选比较、化学反应机理判断、长链式推理上仍弱于真正的强 reasoning model
+- 当前 `context management` 还是静态窗口式的：`ContextBuilder` 只保留有限候选与证据，并用启发式权重聚合，弱证据和相似噪声容易一起进入 prompt
+- 系统还没有把成功路线、失败案例、常见 transformation pattern、enzyme/pathway 证据动态写回为 `memory nodes`，因此每次推理都在“重新开始”
+
+| 优化方向 | 具体要做什么 |
+| --- | --- |
+| 更强的 context 管理 | 做分层上下文压缩、candidate clustering、冲突证据去重、动态窗口分配 |
+| 更强的 prompt 编排 | 为 solver / critic / rewriter 设计更细的角色 prompt、显式步骤化推理和结构化中间产物 |
+| 动态记忆节点 | 把 successful routes、hard negatives、reaction motifs、enzyme/pathway evidence 写回 KG 或 memory layer |
+| 升级 reasoning backbone | 后续尝试更强 reasoning model，或者是8/32/72 B的小一点模型，与当前 GLM-5 agent workflow 做对比评测 |
+
+---
+section_key: roadmap
+section_title: 规划
+subsection_title: 拟定下游任务实验
+order: 12
+---
+- 下一阶段我不打算只继续做“图谱本身”，而是基于这套统一图底座推进四类下游任务
+
+| 下游任务 | 任务形式 | 图底座能提供什么 |
+| --- | --- | --- |
+| 多步合成规划 | 从目标分子递归搜索可行路线 | 用 `PRODUCES/CONSUMES` 做多跳 route expansion |
+| 酶催化反应识别 | 二分类：反应是否属于酶催化反应 | 用 `CATALYZED_BY` 与跨来源反应上下文做监督 |
+| 酶推荐 | 给定底物/产物或反应，推荐候选酶 | 用产物、底物、酶三者连接关系做 evidence retrieval |
+| 代谢通路预测 | 预测反应或分子所属 pathway | 用 `PARTICIPATES_IN_PATHWAY` 与跨反应上下文做推断 |

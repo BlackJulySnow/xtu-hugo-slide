@@ -1,0 +1,106 @@
+{
+  "title": "KnowRetro：从无标签分子中学习化学知识用于逆合成预测",
+  "presenter": "刘晴瑞",
+  "report_date": "2026-03-24",
+  "summary": "10页组会汇报版本，基于论文原始 PDF 裁取高清图表，围绕背景、方法、实验结果、案例分析与 DrugKG 思考展开。",
+  "slides": [
+    {
+      "order": 1,
+      "section_key": "introduction",
+      "section_title": "引言",
+      "subsection_title": "研究背景与挑战",
+      "body": "- 逆合成任务是给定目标产物，预测合理反应物\n- 现有主流方法主要依赖带标签反应数据\n- 反应数据存在规模有限、质量不均、覆盖不足的问题\n- 无标签分子数据中蕴含大量可迁移的结构知识\n\n![逆合成任务研究背景](assets/fig1.png 'w=90%')\n"
+    },
+    {
+      "order": 2,
+      "section_key": "introduction",
+      "section_title": "引言",
+      "subsection_title": "核心思路与论文贡献",
+      "body": "- 核心思路：从大规模无标签分子中学习化学知识，而不是只依赖反应标签\n- 关键表示：构建分子、子结构、官能团三层知识图谱\n- 关键训练：化学引导预训练 + 任务相关知识适配器\n- 目标效果：同时提升准确性、鲁棒性和多样性\n\n![Figure 1a. 化学知识图的直观示意](assets/fig1a.png \"Figure 1a. 化学知识图的直观示意\")\n\n![Figure 1b. 引入无标签知识后的性能提升](assets/fig1b.png \"Figure 1b. 引入无标签知识后的性能提升\")\n"
+    },
+    {
+      "order": 3,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "KnowRetro 总体框架",
+      "body": "- 整体框架分为三部分：知识构建、预训练、下游逆合成预测\n- 先从无标签分子构建层次化知识图谱\n- 再通过分子到片段的预训练学习反应相关先验\n- 最后通过知识适配器把任务相关信息注入生成模型\n\n![Figure 2. KnowRetro 总体框架](assets/fig2.png \"w=100%\")\n"
+    },
+    {
+      "order": 4,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "层次化化学知识图谱",
+      "body": "- 通过 BRICS 将分子拆解为合成相关子结构\n- 通过 SMARTS 识别子结构中的关键官能团\n- 形成分子、子结构、官能团三层知识结构\n- 使用 RGCN 编码图结构与关系语义\n\n![Figure 1a. 分子、子结构与官能团的层次关系](assets/fig1a.png \"w=70%\")\n\n![Figure 2a. 层次化知识表示模块](assets/fig2a.png \"Figure 2a. 层次化知识表示模块\")\n"
+    },
+    {
+      "order": 5,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "反应感知预训练",
+      "body": "- 预训练目标是分子 SMILES 到子结构序列的翻译\n- 本质上让模型先学会按化学意义拆分分子\n- 这一阶段帮助模型捕获片段级断键模式，为后续逆合成预测提供初始化\n\n![Figure 2b. 反应感知预训练模块](assets/fig2b.png)\n"
+    },
+    {
+      "order": 6,
+      "section_key": "method",
+      "section_title": "方法",
+      "subsection_title": "知识适配器与注入机制",
+      "body": "- 原始 KG 表示信息丰富，但并不都与当前任务直接相关\n- 作者设计任务相关知识适配器进行信息压缩\n- 通过变分信息瓶颈保留关键信号、过滤冗余噪声\n- 最终将知识同时注入编码器和解码器\n\n![Figure 2c. 知识适配器与知识注入模块](assets/fig2c.png \"w=70%\")\n"
+    },
+    {
+      "order": 7,
+      "section_key": "experiment",
+      "section_title": "实验",
+      "subsection_title": "主要结果：整体性能",
+      "body": "- 数据集包括 USPTO-50K 和 USPTO-FULL按照反应类型 Unknown 和 Known 两种设定\n- USPTO-50K Unknown Top-1 达到 62.7%\n- USPTO-50K Known Top-1 达到 71.6%\n- USPTO-FULL Top-1 / Top-10 达到 56.2% / 80.1%\n\n![Table 1. USPTO-50K 上的主要性能对比](assets/table1.png \"w=70%\")\n"
+    },
+    {
+      "order": 8,
+      "section_key": "experiment",
+      "section_title": "实验",
+      "subsection_title": "进一步结果：化学有效性与消融",
+      "body": "- MaxFrag 指标说明主反应物匹配更稳定\n- Round-Trip 指标说明生成结果具有更强化学可行性\n- 消融实验表明 KG 和预训练都不可缺少\n- 完整层次结构优于只用分子层或单一局部结构\n\n![Table 2. MaxFrag 与 Round-Trip 结果](assets/table2.png \"Table 2. MaxFrag 与 Round-Trip 结果\")\n\n![Table 3. 消融实验结果](assets/table3.png \"Table 3. 消融实验结果\")\n"
+    },
+    {
+      "order": 9,
+      "section_key": "experiment",
+      "section_title": "实验",
+      "subsection_title": "鲁棒性与多样性分析",
+      "body": "- 在结构噪声和语义噪声下，性能下降较小\n- 说明知识图存在扰动时模型仍具稳定性\n- 预测结果在结构相似度上更分散，具有更强多样性\n- 论文说明模型并非只学到表面 SMILES 模式\n\n![Figure 3. 知识图噪声下的鲁棒性分析](assets/fig3.png \"Figure 3. 知识图噪声下的鲁棒性分析\")\n\n![Figure 4. 预测结果的多样性分布分析](assets/fig4.png \"Figure 4. 预测结果的多样性分布分析\")\n"
+    },
+    {
+      "order": 10,
+      "section_key": "conclusion",
+      "section_title": "总结",
+      "subsection_title": "论文总结",
+      "body": "- 从无标签分子中学习结构知识，是本文最核心的创新点\n- 层次化 KG、化学预训练、知识适配器共同构成统一框架\n- 实验表明方法在准确性、鲁棒性和多样性上均有提升\n- 方法还展现出一定可解释性与多步规划潜力\n\n![Figure 5. 层次知识带来的注意力模式变化](assets/fig5.png \"Figure 5. 层次知识带来的注意力模式变化\")\n\n![Figure 6. 多步逆合成规划案例](assets/fig6.png \"Figure 6. 多步逆合成规划案例\")\n"
+    },
+    {
+      "order": 11,
+      "section_key": "conclusion",
+      "section_title": "总结",
+      "subsection_title": "审稿意见视角下的优点与不足",
+      "body": "- 决议结果：Reject，评分分别为 R1=4、R2=6、R3=4\n- 审稿人与 AC 普遍认可：问题有意义、方法有效、实验较充分\n- rebuttal 后已补充：多步规划、正向反应、性质预测、层次消融、PSM 对照、真实噪声示例\n- 但最终仍被认为：绝对增益有限， novelty 说服力不足\n\n| 维度 | 主要优点 | 主要不足 |\n| --- | --- | --- |\n| 方法 | 利用无标签分子学习层次化知识，思路清晰 | 相比强基线 Top-1 绝对提升不算大 |\n| 结构设计 | KG、预训练、适配器组合有效 | 模块间统一设计动机最初表达不够清楚 |\n| 实验 | USPTO 结果强，消融和扩展实验较丰富 | 初版仅聚焦单步任务，跨任务验证不足 |\n| 可靠性 | rebuttal 中补了 stricter negatives 与真实噪声例子 | 仍缺少公开 Pistachio 测试，外部说服力有限 |\n"
+    },
+    {
+      "order": 12,
+      "section_key": "energykg",
+      "section_title": "DrugKG",
+      "subsection_title": "从 KnowRetro 到 DrugKG：为什么要继续往前走",
+      "body": "- KnowRetro 解决的是“结构知识如何进入逆合成模型”\n- 但真实药物设计还要同时考虑合成、结合和代谢三类约束\n- 仅有化学结构 KG 还不够，需要进一步引入蛋白-酶层级 KG\n\n![Figure 7. 候选药物、靶点蛋白与代谢酶之间的核心关系](assets/energykg-relationship.png \"w=70%\")\n"
+    },
+    {
+      "order": 13,
+      "section_key": "energykg",
+      "section_title": "DrugKG",
+      "subsection_title": "DrugKG 作为统一模型",
+      "body": "- DrugKG 试图把结合、代谢、逆合成放进同一个图结构中\n- 统一能量语义包括 $\\Delta G_{bind}$、BDE、$\\Delta G^{\\ddagger}$ 等关键指标\n- 图中不仅有分子和蛋白，还包含局部化学位点与历史记忆\n- 这样知识图不再只是数据库，而是 Agent 的推理环境\n\n![Figure 8. DrugKG 作为多智能体先导优化的统一模型](assets/energykg-simplified-framework.png \"w=70%\")\n"
+    },
+    {
+      "order": 14,
+      "section_key": "energykg",
+      "section_title": "DrugKG",
+      "subsection_title": "Energy-KG Core Agent 与闭环优化",
+      "body": "- 由 DrugKG Core Agent 统一协调 Binding、Metabolism、Retrosynthesis 三类 Agent\n- 三类 Agent 共享同一个图记忆，并把证据持续写回\n- Binding 负责解释是否有效，Metabolism 负责代谢风险，Retrosynthesis 负责可合成性\n- 最终形成“评估 - 改写 - 验证 - 回写”的闭环优化\n\n![Figure 9. 以 Drug-KG Core Agent 为中心的多智能体编排框架](assets/energykg-multi-agent-architecture.png \"w=70%\")\n"
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+---
+title: Global Thermodynamic Consistency in Multi-Agent Retrosynthesis Planning
+presenter: 刘晴瑞
+report_date: 2026-05-14
+summary: A reconstructed paper-style research presentation focusing on thermodynamic consistency checking for single-step and multi-step retrosynthesis.
+---
+
+---
+section_key: intro
+section_title: 问题定义
+subsection_title: 问题定义
+order: 1
+---
+**单步逆合成**：给定目标产物分子 $M$，寻找一组可行的前体分子 $\{P_1, P_2, \ldots\}$ 及其对应的化学反应 $r$，使得 $\{P_i\} \xrightarrow{r} M$。现有方法主要分为三类：
+
+- **模板驱动方法**：依赖专家手工或自动提取的反应模板进行断键匹配，可解释性强但覆盖度有限
+- **无模板方法**：将逆合成视为序列到序列或图到图的生成任务，覆盖广但缺乏化学约束
+- **半模板方法**：先预测反应中心再检索或匹配模板，兼顾灵活性与合理性
+
+**多步逆合成**：递归应用单步预测，构建从目标分子到可购买试剂的合成树。搜索策略包括经典的 AND-OR 树、蒙特卡洛树搜索、基于语言模型的序列规划等。核心挑战是搜索空间随深度指数膨胀。
+
+![逆合成方法分类与搜索策略](assets/图片1.png "w=90%")
+
+**共同的物理约束**：无论单步还是多步，一条合理的逆合成路径必须满足热力学一致性——每一步断键成键反应在能量上可行，全局路径的总能量代价处于合理范围。现有方法大多忽视这一物理约束。
+
+---
+section_key: intro
+section_title: 问题定义
+subsection_title: 现有方法不足
+order: 2
+---
+现有逆合成方法在三个方面存在系统性局限：
+
+- **热力学有效性缺失**：模板匹配和统计频率无法保证候选路径在能量上可行
+- **泛化能力不足**：面对训练分布外的新分子骨架，模板覆盖率急剧下降
+- **搜索空间发散**：AND-OR 树随深度指数膨胀，缺乏能量引导的剪枝机制
+
+![现有方法三大不足](assets/2026-05-14-14-30-00-three-limitations.png "w=85%")
+
+---
+section_key: related
+section_title: 相关工作
+subsection_title: 单步逆合成方法
+order: 3
+---
+在单步逆合成方面，方法经历了从模板驱动到无模板再到半模板的演进。
+
+| 维度 | 模板驱动 | 无模板 | 半模板 |
+|------|---------|--------|--------|
+| **代表方法** | GLN、RetroPrime | Molecular Transformer、G2Gs | LocalRetro、SemiRetro、RetroSiG |
+| **核心思想** | 从已知反应中提取模板库，匹配生成反应物 | 端到端学习产物到反应物的映射 | 仅模板化反应中心定位，反应物自由生成 |
+| **优势** | 可解释性强，产物必为有效反应 | 泛化能力强，可发现模板外反应 | 兼顾可解释性与覆盖范围 |
+| **局限** | 受模板库覆盖限制 | 常生成化学无效分子，需额外验证 | 反应中心识别仍需人工先验定义 |
+
+模板驱动方法以 GLN 和 RetroPrime 为代表，可解释性强但受模板库覆盖限制。无模板方法如 Molecular Transformer 端到端学习映射，泛化能力强但常生成化学无效分子。
+
+近期趋势是**半模板框架**——LocalRetro 用局部原子编辑替代完整模板，SemiRetro 用图神经网络定位反应中心后自由补全，RetroSiG 进一步引入超图搜索处理多中心复杂反应。半模板方法正在成为主流方向。
+
+---
+section_key: related
+section_title: 相关工作
+subsection_title: 多步逆合成方法
+order: 4
+---
+在多步逆合成方面，主要有四大类方法：
+
+| 维度 | A* 树搜索 | 蒙特卡洛树搜索 | 序列生成 | LLM 增强推理 |
+|------|-------------|---------------|---------|-------------|
+| **代表方法** | Retro*、MechRetro | AiZynthFinder | ChemPlanner | AOT*、MMORF |
+| **核心思想** | 启发函数引导最优路径 | 随机模拟评估节点价值 | 单模型直接输出完整路线 | 大模型生成路径再结构化验证 |
+| **优势** | 保证最优性，可追溯 | 工业级鲁棒性，易扩展 | 无需搜索，推理速度快 | 零样本泛化，无需训练化学模型 |
+| **局限** | 启发函数依赖单步模型质量 | 收敛慢，需大量迭代 | 长序列易累积误差 | 幻觉风险高，化学有效性难保证 |
+
+Retro* 奠定了多步逆合成的搜索范式；AiZynthFinder 将 MCTS 工程化为工业级工具。近期两大趋势：**机理融合**（如 MechRetro 将化学机理编码为图学习先验）和 **LLM 赋能**（如 AOT* 用大模型生成路径再用 AND-OR 树结构化验证，搜索效率提升 3-5 倍）。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 方法概览
+order: 5
+---
+针对上述三方面不足，本工作从**能量一致性**出发，提出一套覆盖单步与多步逆合成的统一框架。
+
+**核心思路**：将能量先验作为贯穿所有阶段的约束信号，而非事后验证。
+
+| 模块 | 针对问题 | 方案 |
+| --- | --- | --- |
+| **Energy-KG** | 泛化能力不足 | 构建能量增强的反应知识图谱，将热力学信号与结构化知识融合 |
+| **Energy Core Agent** | 热力学有效性缺失 | 单步逆合成多智能体流水线，BDE Critic 提供能量约束的候选排序 |
+| **EnergyRetro-AOT** | 搜索空间发散 | 能量引导的 AOT* 多步搜索算法，热力学一致性驱动全局剪枝 |
+
+三大模块从局部到全局递进：KG 提供知识先验，单步 Agent 嵌入能量约束，多步框架扩展至全局路线规划。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 反应知识图谱构建
+order: 6
+---
+知识图谱以反应为核心节点，关联底物、产物、酶、反应条件和关键官能团，形成可查询的结构化知识网络。
+
+**边关系**：底物和产物通过反应可行性连接反应节点，酶通过催化关系连接反应，条件节点提供反应约束。
+
+![Reaction Knowledge Graph](assets/b4dd9a3a-6f62-49f2-aeb1-61828c0f9862.png "w=70%")
+
+KG 提供离散事实检索（是否存在已知反应路径），Energy Core 提供连续热力学评估。两者互补。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 单步逆合成：Energy Core Agent 流水线
+order: 7
+---
+单步逆合成采用六阶段的 Energy Core Agent 流水线：
+
+```text
+Retriever → ContextBuilder → Solver Committee → Critic → Rewriter → Selector
+```
+
+![Single-step Multi-Agent Pipeline](assets/2026-04-09-06-39-16-single-step-horizontal-paper.png "w=90%")
+
+流程是先检索证据，再生成候选方案，进行批判性评估，最后统一排序输出。除了最佳路线外，还保留完整 ranking 用于下游分析。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 分层 RAG 与 Candidate Aggregation
+order: 8
+---
+检索采用四级分层策略：
+
+| 层级 | 作用 | 调整 |
+| --- | --- | --- |
+| exact | 精度最高 | 提高排序权重 |
+| canonical | 对齐表示差异 | 作为高可信补充 |
+| similarity | 解决召回不足 | 压制噪声，防止 flooding |
+| substructure | fallback 证据 | 保留，同时也压制噪声 |
+
+**聚合策略**
+
+- 权重：`exact 1.5 > canonical 0.7 > similarity 0.35 > substructure 0.2`
+- 提高 `multi-level / multi-source bonus`
+- 加入 precursor size penalty
+
+**Candidate 分数计算**
+
+- `weighted_score = Σ(level_weight × hit_score)`
+- `aggregate_score = weighted_score + multi_level_bonus + 0.04 × source_count - size_penalty`
+
+---
+section_key: method
+section_title: 方法
+subsection_title: EnergyRetro-KGR 整体框架
+order: 9
+---
+这是 EnergyRetro-KGR 的多步搜索框架：
+
+- **圆形节点**：分子节点（OR）—— 选择一种反应即可
+- **方形节点**：反应节点（AND）—— 所有前体都必须解决
+- **蓝色路径**：当前激活的搜索路径
+- 价值分数越低表示路线越有前景
+
+![EnergyRetro-KGR Framework](assets/energyretro-kgr-framework-20260512.png "w=60%")
+
+搜索循环包括四大核心机制：AND-OR Tree Search 建模分子和反应节点关系，KG-guided Selection 基于知识能量联合价值函数选择最优扩展节点，Shallow Rollout 加 Sibling Jump 避免组合爆炸并在失败时跳转兄弟节点，Memory Agent 记录成功失败和困难负样本避免重复搜索。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 多步逆合成：EnergyRetro-KGR 框架
+order: 10
+---
+**输入**：目标分子  
+**输出**：完整多步合成路线
+
+四阶段主循环：
+
+```text
+Selection → Expansion → Rollout and Critic → Update
+```
+
+| 机制 | 作用 |
+| --- | --- |
+| AND-OR Tree Search | 建模分子和反应节点关系 |
+| KG-guided Selection | 基于知识-能量联合价值函数选择最优扩展节点 |
+| Shallow Rollout + Sibling Jump | 浅层模拟避免组合爆炸，失败时跳转兄弟节点 |
+| Memory Agent | 记录成功/失败/困难负样本，避免重复搜索 |
+
+单步 Energy Agent 提供断键能力与热力学信号，多步框架在此基础上进行全局路线规划与决策。
+
+---
+section_key: method
+section_title: 方法
+subsection_title: BDE 能量约束嵌入多步搜索
+order: 11
+---
+**BDE 能量计算**：对每个候选反应计算 weakest bond BDE 差值。
+
+能量约束判定：
+
+- $\Delta E_{\text{BDE}} < -20$ kcal/mol → 不利能量差
+- 产物最低 BDE $< 60$ kcal/mol → 高反应性风险
+
+**Energy Critic 三维度打分**：
+
+| 信号 | 作用 | 逻辑 |
+| --- | --- | --- |
+| BDE | 断键合理性 | $p_{\text{bde}} = \sigma(\Delta E_{\text{BDE}} / \tau_{\text{diff}})$ |
+| Plausibility | 化学可行性 | KG 中反应证据强度 |
+| Condition Compatibility | 条件兼容 | 溶剂/pH/温度冲突检测 |
+
+Critic Penalty：$P_{\text{critic}}(r) = \sum_j w_j \cdot \mathbb{I}[\text{issue}_j]$
+
+---
+section_key: method
+section_title: 方法
+subsection_title: 能量引导的 Selection 与 Rollout Update
+order: 12
+---
+**Selection 阶段** — 综合价值函数最小化：
+
+$$V_{\text{all}}(m) = \alpha \cdot S_{\text{KG}}(m) + \beta \cdot E_{\text{BDE}}(m) + \gamma \cdot P_{\text{memory}}(m)$$
+
+$$m^* = \arg\min_{m \in \mathcal{C}} V_{\text{all}}(m)$$
+
+**Rollout 阶段**：
+
+- **Shallow Rollout**：1~3 步浅层模拟，每步用 Critic 打分快速淘汰
+- **Sibling Jump**：当前节点失败时，跳转至 BDE 能量相近的兄弟节点
+- **Memory**：记录能量不合理的失败模式，后续搜索中施加惩罚 $P_{\text{memory}}$
+
+---
+section_key: experiment
+section_title: 实验与分析
+subsection_title: 单步逆合成实验结果
+order: 13
+---
+在 USPTO 上的实验结果：
+
+| Model | Top-1 | Top-3 | Top-5 | Top-10 |
+|-------|-------|-------|-------|--------|
+| ChemDual-8B | 50.0 | 67.7 | 70.5 | 78.3 |
+| RetroDFM-R-7B | 59.0 | — | — | — |
+| Transformer | 42.4 | 58.6 | 63.8 | 67.7 |
+| BioT5+ | 44.4 | 59.6 | 61.3 | 73.4 |
+| InstructMol | 30.2 | 51.7 | 57.1 | 64.9 |
+| EnergyKGR$_{\text{GLM4.7}}$ | 52.1 | 56.2 | 58.7 | 62.6 |
+| EnergyKGR$_{\text{DSv3.2}}$ | 54.3 | 58.9 | 61.4 | 65.2 |
+| EnergyKGR$_{\text{DSv4}}$ | <u>65.8</u> | <u>74.1</u> | <u>76.3</u> | <u>78.0</u> |
+| EnergyKGR$_{\text{GPT5.5}}$ | **68.5** | **76.6** | **78.1** | **79.9** |
+
+EnergyKGR 系列使用不同底座模型，其中 GPT5.5 底座表现最好，Top-1 达到 68.5%，Top-10 达到 79.9%。DSv4 底座也取得了不错的成绩，Top-1 为 65.8%。
+
+相比 ChemDual-8B 等基线方法，本方法在 Top-1 和 Top-3 指标上有明显优势。
+
+---
+section_key: experiment
+section_title: 实验与分析
+subsection_title: 多步逆合成系统级消融分析
+order: 14
+---
+通过逐组件消融实验评估对核心指标的影响：
+
+| 配置 | 路径成功率 | Valid Step | 平均路径长度 | 搜索时间 (s) |
+| --- | --- | --- | --- | --- |
+| Full Model | **49.6%** | **71.6%** | 4.2 | 155.8 |
+| - Energy Core | 41.3% (-8.3) | 65.1% (-6.5) | 5.1 (+0.9) | 118.3 |
+| - KG Prior | 44.8% (-4.8) | 67.2% (-4.4) | 4.5 (+0.3) | 102.1 |
+| - Energy Critic | 43.1% (-6.5) | 61.3% (-10.3) | 4.8 (+0.6) | 142.5 |
+| - Memory Agent | 46.2% (-3.4) | 69.8% (-1.8) | 4.3 (+0.1) | 98.7 |
+
+**关键结论**：
+
+- **Energy Core** 是最大贡献者，移除后路径成功率下降 8.3%，验证了热力学一致性是多步规划的核心约束
+- **Energy Critic** 对 Valid Step 影响最大（-10.3%），说明热力学剪枝对保证单步化学合理性至关重要
+- **Memory Agent** 通过积累失败模式减少重复探索，改善搜索效率
+
+---
+section_key: conclusion
+section_title: 结论
+subsection_title: 结论
+order: 15
+---
+### 三大贡献
+
+1. **统一能量语义**：BDE 作为跨任务的共同能量语言，将焓、自由能、活化能统一到单一表示空间
+2. **热力学导航剪枝**：在 AOT* 搜索中嵌入 Physicist Agent，将能量不可行路径从指数级搜索空间中提前剔除
+3. **多智能体闭环**：Explorer、Physicist、Evaluator、Memory 形成搜索、验证、评估、学习的完整闭环
+
+感谢大家，欢迎提问和讨论。
