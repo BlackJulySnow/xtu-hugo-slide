@@ -1,9 +1,12 @@
 {{ define "main" }}
 {{ $deckName := .Section }}
 
-{{/* ===== Parse content.md directly via readFile ===== */}}
-{{ $contentPath := printf "content/%s/content.md" $deckName }}
-{{ $raw := readFile $contentPath }}
+{{/* ===== Parse content.md through Hugo page graph so dev reload can track it ===== */}}
+{{ $contentPage := .Site.GetPage (printf "/%s/content" $deckName) }}
+{{ $raw := "" }}
+{{ if $contentPage }}
+  {{ $raw = printf "---\ntitle: %s\npresenter: %s\nreport_date: %s\nsummary: %s\n---\n%s" $contentPage.Title ($contentPage.Params.presenter | default "") ($contentPage.Params.report_date | default "") ($contentPage.Params.summary | default "") $contentPage.RawContent }}
+{{ end }}
 
 {{ if $raw }}
 {{/* === Parse content.md: split by standalone --- lines only === */}}

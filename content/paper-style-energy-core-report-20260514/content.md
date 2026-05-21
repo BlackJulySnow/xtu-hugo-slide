@@ -43,18 +43,16 @@ section_title: 相关工作
 subsection_title: 单步逆合成方法
 order: 3
 ---
-在单步逆合成方面，方法经历了从模板驱动到无模板再到半模板的演进。
+**单步逆合成**：给定目标分子，预测一组可能的反应物前体。现有方法按是否依赖人工定义的反应模板，分为模板驱动、无模板和半模板三类。
 
 | 维度 | 模板驱动 | 无模板 | 半模板 |
 |------|---------|--------|--------|
-| **代表方法** | GLN、RetroPrime | Molecular Transformer、G2Gs | LocalRetro、SemiRetro、RetroSiG |
+| **代表方法** | GLN、RetroPrime | Molecular Transformer、G2Gs、RetroXpert | LocalRetro、SemiRetro、RetroSiG |
 | **核心思想** | 从已知反应中提取模板库，匹配生成反应物 | 端到端学习产物到反应物的映射 | 仅模板化反应中心定位，反应物自由生成 |
 | **优势** | 可解释性强，产物必为有效反应 | 泛化能力强，可发现模板外反应 | 兼顾可解释性与覆盖范围 |
-| **局限** | 受模板库覆盖限制 | 常生成化学无效分子，需额外验证 | 反应中心识别仍需人工先验定义 |
+| **局限** | 受模板库覆盖限制，无法处理未见反应模式 | 常生成化学无效分子，需额外验证 | 反应中心识别仍需人工先验定义 |
 
-模板驱动方法以 GLN 和 RetroPrime 为代表，可解释性强但受模板库覆盖限制。无模板方法如 Molecular Transformer 端到端学习映射，泛化能力强但常生成化学无效分子。
-
-近期趋势是**半模板框架**——LocalRetro 用局部原子编辑替代完整模板，SemiRetro 用图神经网络定位反应中心后自由补全，RetroSiG 进一步引入超图搜索处理多中心复杂反应。半模板方法正在成为主流方向。
+**发展趋势**：早期以模板驱动为主（如 GLN 用图逻辑网络匹配反应模板），但覆盖瓶颈推动无模板方法兴起（Molecular Transformer 用序列到序列直接生成）。近期主流转向半模板框架——如 LocalRetro 以局部原子编辑替代完整模板，SemiRetro 用图神经网络定位反应中心后自由补全子结构，RetroSiG 进一步引入超图搜索处理多中心复杂反应。
 
 ---
 section_key: related
@@ -111,7 +109,7 @@ section_title: 方法
 subsection_title: 单步逆合成：Energy Core Agent 流水线
 order: 7
 ---
-单步逆合成采用六阶段的 Energy Core Agent 流水线：
+**单步逆合成采用六阶段 Energy Core Agent 流水线：**
 
 ```text
 Retriever → ContextBuilder → Solver Committee → Critic → Rewriter → Selector
@@ -119,7 +117,7 @@ Retriever → ContextBuilder → Solver Committee → Critic → Rewriter → Se
 
 ![Single-step Multi-Agent Pipeline](assets/2026-04-09-06-39-16-single-step-horizontal-paper.png "w=90%")
 
-流程是先检索证据，再生成候选方案，进行批判性评估，最后统一排序输出。除了最佳路线外，还保留完整 ranking 用于下游分析。
+先检索证据，再生成候选方案、进行批判性评估，最后统一排序输出。除 `best_route` 外，还会保留完整 ranking 用于下游分析。
 
 ---
 section_key: method
@@ -172,38 +170,50 @@ order: 10
 ---
 **输入**：目标分子  
 **输出**：完整多步合成路线
-
-四阶段主循环：
-
 ```text
-Selection → Expansion → Rollout and Critic → Update
+(a) Selection → (b) Expansion → (c) Rollout & Critic → (d) Update
 ```
+
+**四大核心机制**
 
 | 机制 | 作用 |
 | --- | --- |
-| AND-OR Tree Search | 建模分子和反应节点关系 |
+| AND-OR Tree Search | 圆形 = 分子节点（OR），方形 = 反应节点（AND） |
 | KG-guided Selection | 基于知识-能量联合价值函数选择最优扩展节点 |
 | Shallow Rollout + Sibling Jump | 浅层模拟避免组合爆炸，失败时跳转兄弟节点 |
 | Memory Agent | 记录成功/失败/困难负样本，避免重复搜索 |
 
-单步 Energy Agent 提供断键能力与热力学信号，多步框架在此基础上进行全局路线规划与决策。
+<!-- **四阶段主循环**
+
+```text
+(a) Selection → (b) Expansion → (c) Rollout & Critic → (d) Update
+```
+
+**与单步逆合成的关系**
+
+单步 Energy Agent 提供断键能力与热力学信号，多步框架在此基础上进行全局路线规划与决策 -->
 
 ---
 section_key: method
 section_title: 方法
-subsection_title: BDE 能量约束嵌入多步搜索
+subsection_title: BDE 能量约束嵌入多步搜索架构
 order: 11
 ---
-**BDE 能量计算**：对每个候选反应计算 weakest bond BDE 差值。
+
+### 1. BDE 能量计算
+
+对每个候选反应 $r: \{P_i\} \to M$，计算 weakest bond BDE 差值：
+
+$$\Delta E_{\text{BDE}}(r) = \sum_{b \in P_{\text{all}}} \text{BDE}(b) - \sum_{b \in M} \text{BDE}(b)$$
 
 能量约束判定：
 
-- $\Delta E_{\text{BDE}} < -20$ kcal/mol → 不利能量差
-- 产物最低 BDE $< 60$ kcal/mol → 高反应性风险
+$$\Delta E_{\text{BDE}} < -\tau_{\text{diff}} \;(-20) \implies \text{不利能量差}$$
+$$\text{BDE}_{\min}(P) < \tau_{\text{reactive}} \;(60) \implies \text{高反应性风险}$$  
 
-**Energy Critic 三维度打分**：
+### 2. Energy Critic 三维度打分
 
-| 信号 | 作用 | 逻辑 |
+| 信号 | 作用 | 公式/逻辑 |
 | --- | --- | --- |
 | BDE | 断键合理性 | $p_{\text{bde}} = \sigma(\Delta E_{\text{BDE}} / \tau_{\text{diff}})$ |
 | Plausibility | 化学可行性 | KG 中反应证据强度 |
@@ -217,13 +227,14 @@ section_title: 方法
 subsection_title: 能量引导的 Selection 与 Rollout Update
 order: 12
 ---
-**Selection 阶段** — 综合价值函数最小化：
 
-$$V_{\text{all}}(m) = \alpha \cdot S_{\text{KG}}(m) + \beta \cdot E_{\text{BDE}}(m) + \gamma \cdot P_{\text{memory}}(m)$$
+### 3. Selection 阶段 — 能量引导的价值函数
 
-$$m^* = \arg\min_{m \in \mathcal{C}} V_{\text{all}}(m)$$
+$$V_{\text{all}}(m) = \alpha \cdot S_{\text{KG}}(m) + \beta \cdot E_{\text{BDE}}(m) + \gamma \cdot \cdot P_{\text{memory}}(m)$$
 
-**Rollout 阶段**：
+选择目标：$\displaystyle m^* = \arg\min_{m \in \mathcal{C}} V_{\text{all}}(m)$
+
+### 4. Rollout & Update 阶段
 
 - **Shallow Rollout**：1~3 步浅层模拟，每步用 Critic 打分快速淘汰
 - **Sibling Jump**：当前节点失败时，跳转至 BDE 能量相近的兄弟节点
@@ -235,12 +246,11 @@ section_title: 实验与分析
 subsection_title: 单步逆合成实验结果
 order: 13
 ---
-在 USPTO 上的实验结果：
 
 | Model | Top-1 | Top-3 | Top-5 | Top-10 |
 |-------|-------|-------|-------|--------|
 | ChemDual-8B | 50.0 | 67.7 | 70.5 | 78.3 |
-| RetroDFM-R-7B | 59.0 | — | — | — |
+| RetroDFM-R-7B | 59.0 | - | - | - |
 | Transformer | 42.4 | 58.6 | 63.8 | 67.7 |
 | BioT5+ | 44.4 | 59.6 | 61.3 | 73.4 |
 | InstructMol | 30.2 | 51.7 | 57.1 | 64.9 |
@@ -259,6 +269,8 @@ section_title: 实验与分析
 subsection_title: 多步逆合成系统级消融分析
 order: 14
 ---
+
+
 通过逐组件消融实验评估对核心指标的影响：
 
 | 配置 | 路径成功率 | Valid Step | 平均路径长度 | 搜索时间 (s) |
@@ -268,23 +280,24 @@ order: 14
 | - KG Prior | 44.8% (-4.8) | 67.2% (-4.4) | 4.5 (+0.3) | 102.1 |
 | - Energy Critic | 43.1% (-6.5) | 61.3% (-10.3) | 4.8 (+0.6) | 142.5 |
 | - Memory Agent | 46.2% (-3.4) | 69.8% (-1.8) | 4.3 (+0.1) | 98.7 |
+<!-- | - Enzyme Module | 45.9% (-3.7) | 68.5% (-3.1) | 4.4 (+0.2) | 99.2 | -->
 
-**关键结论**：
+<!-- **关键结论：** -->
 
-- **Energy Core** 是最大贡献者，移除后路径成功率下降 8.3%，验证了热力学一致性是多步规划的核心约束
-- **Energy Critic** 对 Valid Step 影响最大（-10.3%），说明热力学剪枝对保证单步化学合理性至关重要
-- **Memory Agent** 通过积累失败模式减少重复探索，改善搜索效率
+- Energy Core 是最大贡献者，移除后路径成功率下降 8.3%，验证热力学一致性是多步规划的核心约束
+- Energy Critic 对 Valid Step 影响最大（-10.3%），说明热力学剪枝对保证单步化学合理性至关重要
+<!-- - KG 先验和 Enzyme 模块提供互补的结构化知识，各自贡献约 4-5% 的路径成功率提升 -->
+- Memory Agent 通过积累失败模式减少重复探索，改善搜索效率
 
 ---
 section_key: conclusion
 section_title: 结论
-subsection_title: 结论
+subsection_title: 结论与展望
 order: 15
 ---
+
 ### 三大贡献
 
 1. **统一能量语义**：BDE 作为跨任务的共同能量语言，将焓、自由能、活化能统一到单一表示空间
 2. **热力学导航剪枝**：在 AOT* 搜索中嵌入 Physicist Agent，将能量不可行路径从指数级搜索空间中提前剔除
-3. **多智能体闭环**：Explorer、Physicist、Evaluator、Memory 形成搜索、验证、评估、学习的完整闭环
-
-感谢大家，欢迎提问和讨论。
+3. **多智能体闭环**：Explorer-Physicist-Evaluator-Memory 形成搜索-验证-评估-学习的完整闭环

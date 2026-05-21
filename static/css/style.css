@@ -163,7 +163,7 @@ body.xtu-site.xtu-index-page {
 .xtu-slide-card {
   flex: 1;
   height: auto;
-  padding: 22px;
+  padding: 5px 22px;
   overflow: hidden;
   position: relative;
 }
