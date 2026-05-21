@@ -288,3 +288,4 @@ order: 15
 3. **多智能体闭环**：Explorer、Physicist、Evaluator、Memory 形成搜索、验证、评估、学习的完整闭环
 
 感谢大家，欢迎提问和讨论。
+测试内容

@@ -1,40 +1,113 @@
 {{ define "main" }}
 {{ $deckName := .Section }}
-{{ $deckData := index $.Site.Data.decks $deckName }}
 
-{{ if $deckData }}
-{{/* ===== Single-page JS-based navigation (content.md decks) ===== */}}
-{{ $slides := sort $deckData.slides "order" }}
-{{ $presenter := or $deckData.presenter .Params.presenter .Site.Params.presenter .Site.Params.author "未设置" }}
-{{ $reportDate := or $deckData.report_date .Params.report_date .Site.Params.report_date (now.Format "2006-01-02") }}
+{{/* ===== Parse content.md directly via readFile ===== */}}
+{{ $contentPath := printf "content/%s/content.md" $deckName }}
+{{ $raw := readFile $contentPath }}
+
+{{ if $raw }}
+{{/* === Parse content.md: split by standalone --- lines only === */}}
+{{/* Match --- on its own line, including at start of file */}}
+{{ $raw := replaceRE `(?m)^\s*---\s*$` "<<SLIDE_SEP>>" $raw }}
+{{ $raw = replaceRE "<<SLIDE_SEP>>\n" "<<SLIDE_SEP>>" $raw }}
+{{ $raw = replaceRE "\n<<SLIDE_SEP>>" "<<SLIDE_SEP>>" $raw }}
+{{ $blocks := split $raw "<<SLIDE_SEP>>" }}
+
+{{/* Filter out empty blocks, keep track of indices */}}
+{{ $blocks := where (split $raw "<<SLIDE_SEP>>") "trimmed" "!=" "" }}
+
+{{/* Filter empty blocks */}}
+{{ $nonEmpty := slice }}
+{{ range $b := $blocks }}
+  {{ $t := trim $b " \t\r\n" }}
+  {{ if ne $t "" }}
+    {{ $nonEmpty = $nonEmpty | append $b }}
+  {{ end }}
+{{ end }}
+
+{{/* Block 0 = global frontmatter, then pairs: odd=slide meta, even=slide body */}}
+{{ $globalMeta := dict }}
+{{ range $line := split (index $nonEmpty 0) "\n" }}
+  {{ $t := trim $line " \t\r" }}
+  {{ if and (ne $t "") (findRE "^[a-zA-Z_]" $t) }}
+    {{ $parts := split $t ":" }}
+    {{ if ge (len $parts) 2 }}
+      {{ $k := trim (index $parts 0) " \t\r" }}
+      {{ $v := trim (delimit (after 1 $parts) ":") " \t\r" }}
+      {{ $v := trim $v "'\"" }}
+      {{ $globalMeta = merge $globalMeta (dict $k $v) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{/* After block 0 (global), remaining blocks: 1=meta, 2=body, 3=meta, 4=body, ... */}}
+{{ $slideBlocks := slice }}
+{{ $nSlides := div (sub (len $nonEmpty) 1) 2 }}
+{{ range $n := seq $nSlides }}
+  {{ $metaIdx := add (mul (sub $n 1) 2) 1 }}
+  {{ $bodyIdx := add (mul (sub $n 1) 2) 2 }}
+  {{ $metaStr := trim (index $nonEmpty $metaIdx) " \t\r\n" }}
+  {{ $bodyStr := "" }}
+  {{ if lt $bodyIdx (len $nonEmpty) }}
+    {{ $bodyStr = trim (index $nonEmpty $bodyIdx) " \t\r\n" }}
+  {{ end }}
+  {{ $sm := dict }}
+  {{ range $line := split $metaStr "\n" }}
+    {{ $lt := trim $line " \t\r" }}
+    {{ if and (ne $lt "") (findRE "^[a-zA-Z_]" $lt) }}
+      {{ $lp := split $lt ":" }}
+      {{ if ge (len $lp) 2 }}
+        {{ $lk := trim (index $lp 0) " \t\r" }}
+        {{ $lv := trim (delimit (after 1 $lp) ":") " \t\r" }}
+        {{ $lv := trim $lv "'\"" }}
+        {{ $sm = merge $sm (dict $lk $lv) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ $slideBlocks = $slideBlocks | append (merge $sm (dict "body" $bodyStr)) }}
+{{ end }}
+
+{{/* Sort slides by order (Hugo sorts strings lexicographically, so we use int) */}}
+{{ $sorted := sort $slideBlocks "order" }}
+{{/* Re-order by converting order to int: collect into pairs [order_int, slide] then sort */}}
+{{ $pairs := slice }}
+{{ range $slide := $slideBlocks }}
+  {{ $oi := int (or $slide.order "0") }}
+  {{ $pairs = $pairs | append (dict "_oi" $oi "slide" $slide) }}
+{{ end }}
+{{ $sorted := sort $pairs "_oi" }}
+{{ $slides := slice }}
+{{ range $p := $sorted }}
+  {{ $slides = $slides | append $p.slide }}
+{{ end }}
+{{ $title := or $globalMeta.title .Title }}
+{{ $presenter := or $globalMeta.presenter .Params.presenter .Site.Params.presenter .Site.Params.author "未设置" }}
+{{ $reportDate := or $globalMeta.report_date .Params.report_date .Site.Params.report_date (now.Format "2006-01-02") }}
 
 {{/* Build section list */}}
 {{ $sectionKeys := slice }}
 {{ $sections := slice }}
 {{ range $slide := $slides }}
-  {{ $key := or $slide.section_key $slide.section_title (printf "section-%d" $slide.order) }}
+  {{ $meta := $slide.meta }}
+  {{ $key := or $meta.section_key $meta.section_title (printf "section-%d" $meta.order) }}
   {{ if not (in $sectionKeys $key) }}
     {{ $sectionKeys = $sectionKeys | append $key }}
-    {{ $title := or $slide.section_title (printf "Section %d" $slide.order) }}
-    {{ $sections = $sections | append (dict "key" $key "title" $title) }}
+    {{ $stitle := or $meta.section_title (printf "Section %d" $meta.order) }}
+    {{ $sections = $sections | append (dict "key" $key "title" $stitle) }}
   {{ end }}
 {{ end }}
 
-{{/* Section nav HTML (shared across all slides) */}}
-{{ $sectionNav := "" }}
-{{ range $sections }}
-  {{ $sectionNav = printf "%s<span class=\"xtu-nav-item\" data-section-key=\"%s\">%s</span>" $sectionNav .key .title }}
-{{ end }}
-
-{{/* --- Cover Page --- */}}
+{{/* === Render: Cover Page === */}}
 <main class="xtu-cover-main is-active" data-slide-index="0">
-  <h1 class="xtu-cover-title">{{ or $deckData.title .Title }}</h1>
+  <h1 class="xtu-cover-title">{{ $title }}</h1>
   <p class="xtu-cover-meta">汇报人：{{ $presenter }} ｜ 日期：{{ $reportDate }}</p>
 </main>
 
-{{/* --- Slide Pages --- */}}
+{{/* === Render: Slide Pages === */}}
 {{ range $i, $slide := $slides }}
   {{ $slideIndex := add $i 1 }}
+  {{ $order := or $slide.order $slideIndex }}
+  {{ $sectionKey := or $slide.section_key $slide.section_title (printf "section-%d" $order) }}
   <div class="xtu-slide-container" data-slide-index="{{ $slideIndex }}" style="display:none">
     <header class="xtu-header">
       <div class="xtu-title-wrap">
@@ -61,7 +134,7 @@
     <footer class="xtu-footer">
       <div class="xtu-nav-sections">
         {{ range $sections }}
-          <span class="xtu-nav-item{{ if eq .key $slide.section_key }} is-active{{ end }}" data-section-key="{{ .key }}">{{ .title }}</span>
+          <span class="xtu-nav-item{{ if eq .key $sectionKey }} is-active{{ end }}" data-section-key="{{ .key }}">{{ .title }}</span>
         {{ end }}
       </div>
       <div class="xtu-page-number">{{ $slideIndex }}</div>
@@ -82,7 +155,7 @@
 <script>
 (function () {
   var totalSlides = {{ len $slides }};
-  var currentIndex = 0; // 0 = cover, 1..N = slides
+  var currentIndex = 0;
   var wheelLock = false;
   var lightboxOpen = false;
 
@@ -105,14 +178,12 @@
     }
     currentIndex = index;
 
-    // Initialize slide content (media layout, captions, etc.)
     if (index > 0) {
       var fitRoot = target.querySelector('.xtu-md-root');
       if (fitRoot && !fitRoot.dataset.xtuInit) {
         fitRoot.dataset.xtuInit = '1';
         initSlideContent(fitRoot);
       }
-      // Re-render KaTeX for newly visible slide
       if (typeof window._renderSlideMath === 'function') {
         window._renderSlideMath(target);
       }
@@ -120,7 +191,6 @@
   }
 
   function initSlideContent(fitRoot) {
-    // URL rewriting for absolute paths
     var siteRoot = {{ printf "%q" (relURL "./") | safeJS }};
     Array.prototype.forEach.call(fitRoot.querySelectorAll("img[src^='/'], a[href^='/']"), function (node) {
       if (node.hasAttribute('src')) {
@@ -130,7 +200,6 @@
         node.setAttribute('href', siteRoot.replace(/\/+$/, '/') + node.getAttribute('href').replace(/^\//, ''));
       }
     });
-    // Media layout normalization
     normalizeMediaLayout(fitRoot);
     ensureImageCaptions(fitRoot);
     applyImageFillMode(fitRoot);
@@ -330,7 +399,6 @@
     setTimeout(function () { wheelLock = false; }, 280);
   }, { passive: true });
 
-  // Cover click handler
   var cover = document.querySelector('.xtu-cover-main');
   if (cover) {
     cover.addEventListener('click', function (e) {
@@ -339,7 +407,6 @@
     });
   }
 
-  // Expose for PDF export
   window.XtuSlideShow = showSlide;
   window.XtuSlideTotal = totalSlides;
 })();
@@ -379,7 +446,6 @@
     window.addEventListener('DOMContentLoaded', initialRender);
   }
 
-  // Expose for showSlide to call
   window._renderSlideMath = renderSlideMath;
 })();
 </script>
