@@ -154,9 +154,28 @@
 <script>
 (function () {
   var totalSlides = {{ len $slides }};
-  var currentIndex = 0;
   var wheelLock = false;
   var lightboxOpen = false;
+
+  // Restore slide index from URL hash, or default to 0 (cover)
+  var initialSlide = 0;
+  var hash = window.location.hash;
+  if (hash) {
+    var match = /^#(\d+)$/.exec(hash);
+    if (match) {
+      var n = parseInt(match[1], 10);
+      if (n >= 0 && n <= {{ len $slides }}) initialSlide = n;
+    }
+  }
+  var currentIndex = initialSlide;
+
+  function updateHash(index) {
+    if (history.replaceState) {
+      history.replaceState(null, '', '#' + index);
+    } else {
+      window.location.hash = '#' + index;
+    }
+  }
 
   function getSlideContainer(index) {
     if (index === 0) return document.querySelector('.xtu-cover-main');
@@ -176,6 +195,7 @@
       target.style.display = '';
     }
     currentIndex = index;
+    updateHash(index);
 
     if (index > 0) {
       var fitRoot = target.querySelector('.xtu-md-root');
@@ -408,6 +428,11 @@
 
   window.XtuSlideShow = showSlide;
   window.XtuSlideTotal = totalSlides;
+
+  // Jump to slide from URL hash on page load
+  if (initialSlide !== 0) {
+    showSlide(initialSlide);
+  }
 })();
 </script>
 

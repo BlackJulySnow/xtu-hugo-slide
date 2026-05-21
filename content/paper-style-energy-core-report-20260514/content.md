@@ -162,7 +162,7 @@ order: 9
 
 ![EnergyRetro-KGR Framework](assets/energyretro-kgr-framework-20260512.png "w=60%")
 
-搜索循环包括四大核心机制：AND-OR Tree Search 建模分子和反应节点关系，KG-guided Selection 基于知识能量联合价值函数选择最优扩展节点，Shallow Rollout 加 Sibling Jump 避免组合爆炸并在失败时跳转兄弟节点，Memory Agent 记录成功失败和困难负样本避免重复搜索。
+<!-- 搜索循环包括四大核心机制：AND-OR Tree Search 建模分子和反应节点关系，KG-guided Selection 基于知识能量联合价值函数选择最优扩展节点，Shallow Rollout 加 Sibling Jump 避免组合爆炸并在失败时跳转兄弟节点，Memory Agent 记录成功失败和困难负样本避免重复搜索。 -->
 
 ---
 section_key: method
