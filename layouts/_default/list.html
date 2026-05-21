@@ -88,11 +88,10 @@
 {{ $sectionKeys := slice }}
 {{ $sections := slice }}
 {{ range $slide := $slides }}
-  {{ $meta := $slide.meta }}
-  {{ $key := or $meta.section_key $meta.section_title (printf "section-%d" $meta.order) }}
+  {{ $key := or $slide.section_key $slide.section_title (printf "section-%d" (int (or $slide.order "0"))) }}
   {{ if not (in $sectionKeys $key) }}
     {{ $sectionKeys = $sectionKeys | append $key }}
-    {{ $stitle := or $meta.section_title (printf "Section %d" $meta.order) }}
+    {{ $stitle := or $slide.section_title (printf "Section %d" (int (or $slide.order "0"))) }}
     {{ $sections = $sections | append (dict "key" $key "title" $stitle) }}
   {{ end }}
 {{ end }}
