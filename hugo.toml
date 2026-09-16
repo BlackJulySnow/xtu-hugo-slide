@@ -60,5 +60,9 @@ captionFontPx = 32
 # 新增分类时在此追加 mount，并同步更新 data/content_categories.json。
 # https://gohugo.io/configuration/module/#mounts
 [[module.mounts]]
+source = "content/agents"
+target = "content"
+
+[[module.mounts]]
 source = "content/examples"
 target = "content"

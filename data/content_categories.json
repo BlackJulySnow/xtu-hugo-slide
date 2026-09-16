@@ -1,5 +1,9 @@
 [
   {
+    "id": "agents",
+    "title": "通用智能体"
+  },
+  {
     "id": "examples",
     "title": "示例模板"
   }
