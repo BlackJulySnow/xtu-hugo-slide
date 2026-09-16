@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Build engineering figure prompts without calling the image API."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+
+TEMPLATE_CHOICES = (
+    "graphical-abstract",
+    "system-architecture",
+    "algorithm-workflow",
+    "electronic-schematic",
+)
+
+
+def load_templates() -> dict:
+    template_path = Path(__file__).resolve().parent.parent / "assets" / "prompt-templates" / "engineering-figure-templates.json"
+    return json.loads(template_path.read_text(encoding="utf-8"))
+
+
+def contains_chinese(text: str) -> bool:
+    return bool(re.search(r"[\u3400-\u4dbf\u4e00-\u9fff]", text))
+
+
+def resolve_lang(background: str, requested_lang: str | None) -> str:
+    if requested_lang:
+        return requested_lang
+    return "zh" if contains_chinese(background) else "en"
+
+
+def build_prompt(background: str, figure_type: str, lang: str, style_note: str | None) -> str:
+    templates = load_templates()
+    try:
+        prompt = templates[figure_type][lang].replace("{background}", background.strip())
+    except KeyError as exc:
+        raise SystemExit(f"Unknown template selection: {figure_type}/{lang}") from exc
+
+    if style_note:
+        prompt = f"{prompt}\n\nAdditional Style Requirement:\n{style_note.strip()}"
+    return prompt
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build an engineering-paper figure prompt.")
+    parser.add_argument("background", nargs="?", help="Technical background text.")
+    parser.add_argument("--background-file", help="Read technical background from a text or markdown file.")
+    parser.add_argument(
+        "--figure-template",
+        required=True,
+        choices=TEMPLATE_CHOICES,
+        help="Built-in engineering figure subtype.",
+    )
+    parser.add_argument(
+        "--lang",
+        choices=("en", "zh"),
+        default=None,
+        help="Template output language. If omitted, Chinese backgrounds default to zh and others default to en.",
+    )
+    parser.add_argument("--style-note", help="Optional extra style requirement appended after the template.")
+    return parser.parse_args()
+
+
+def resolve_background(args: argparse.Namespace) -> str:
+    if args.background_file:
+        path = Path(args.background_file)
+        if not path.is_file():
+            raise SystemExit(f"Background file not found: {path}")
+        return path.read_text(encoding="utf-8")
+    if args.background:
+        return args.background
+    raise SystemExit("Provide technical background as an argument or via --background-file.")
+
+
+def main() -> int:
+    args = parse_args()
+    background = resolve_background(args)
+    sys.stdout.write(build_prompt(background, args.figure_template, resolve_lang(background, args.lang), args.style_note))
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,51 @@
+{{- $src := .Destination -}}
+{{- $alt := .Text -}}
+{{- $title := .Title -}}
+{{- $resolved := $src -}}
+{{- $isRemote := or (hasPrefix $src "http://") (hasPrefix $src "https://") (hasPrefix $src "//") -}}
+{{- $isAbs := hasPrefix $src "/" -}}
+
+{{- if not (or $isRemote $isAbs) -}}
+  {{- $resource := .Page.Resources.GetMatch $src -}}
+  {{- if and (not $resource) .Page.CurrentSection -}}
+    {{- $resource = .Page.CurrentSection.Resources.GetMatch $src -}}
+  {{- end -}}
+  {{- if and (not $resource) .Page.CurrentSection -}}
+    {{- $resource = .Page.CurrentSection.Resources.GetMatch (printf "**/%s" $src) -}}
+  {{- end -}}
+  {{- with $resource -}}
+    {{- $resolved = .RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $width := "" -}}
+{{- $height := "" -}}
+{{- $style := "" -}}
+{{- $cleanTitle := $title -}}
+
+{{/* 解析尺寸参数: w=80% h=500px 格式 */}}
+{{- if $title -}}
+  {{- $parts := split $title " " -}}
+  {{- $titleParts := slice -}}
+  {{- range $parts -}}
+    {{- $part := . -}}
+    {{- if hasPrefix $part "w=" -}}
+      {{- $width = strings.TrimPrefix "w=" $part -}}
+    {{- else if hasPrefix $part "h=" -}}
+      {{- $height = strings.TrimPrefix "h=" $part -}}
+    {{- else -}}
+      {{- $titleParts = $titleParts | append $part -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $cleanTitle = delimit $titleParts " " -}}
+{{- end -}}
+
+{{/* 构建 style 属性 */}}
+{{- if $width -}}
+  {{- $style = printf "width:%s;" $width -}}
+{{- end -}}
+{{- if $height -}}
+  {{- $style = printf "%sheight:%s;" $style $height -}}
+{{- end -}}
+
+<img src="{{ $resolved | safeURL }}" alt="{{ $alt }}"{{ with $cleanTitle }} title="{{ . }}"{{ end }}{{ if $style }} style="{{ $style | safeCSS }}"{{ end }}>

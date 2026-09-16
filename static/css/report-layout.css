@@ -1,0 +1,19 @@
+/* Content arrangement for the paper report; XTU theme and chrome stay in style.css. */
+.xtu-md-root .paper-columns { display: grid; grid-template-columns: 1.13fr 1fr; gap: 48px; align-items: start; }
+.xtu-md-root .paper-columns.equal { grid-template-columns: 1fr 1fr; }
+.xtu-md-root .paper-columns.figure-wide { grid-template-columns: 1.35fr 1fr; }
+.xtu-md-root .paper-columns.table-wide { grid-template-columns: 1.6fr 1fr; }
+.xtu-md-root .paper-columns > * { min-width: 0; }
+.xtu-md-root .paper-source { font-size: calc(var(--xtu-slide-body-font-px) * .66); line-height: 1.5; color: #666; margin-top: 16px; }
+.xtu-md-root .paper-takeaway { margin-top: 20px; padding-top: 12px; }
+.xtu-md-root .paper-label { font-size: .7em; color: #666; margin-bottom: 12px; }
+.xtu-md-root .paper-lead { font-size: 1.08em; margin-bottom: 20px; }
+.xtu-md-root .paper-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin: 24px 0; }
+.xtu-md-root .paper-steps h2, .xtu-md-root .paper-columns h2 { font-size: calc(var(--xtu-slide-body-font-px) * 1.2); }
+.xtu-md-root .paper-equation { padding: 16px 0; }
+.xtu-slide-card .xtu-md-root figure.xtu-figure img { width: 100%; max-width: 100%; max-height: 580px; height: auto; object-fit: contain; margin: 0 auto; }
+.xtu-slide-card .xtu-md-root figure.tall img { max-height: 650px; }
+.xtu-slide-card .xtu-md-root figure.wide img { max-height: 390px; }
+.xtu-slide-card .xtu-md-root figure figcaption { font-size: calc(var(--xtu-slide-caption-font-px) * .65); line-height: 1.4; margin-top: 8px; }
+.xtu-md-root table[data-source="tab:paroutes_multistep"] th,
+.xtu-md-root table[data-source="tab:paroutes_multistep"] td { padding-top: 5px; padding-bottom: 5px; }

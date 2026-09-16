@@ -1,0 +1,81 @@
+# Benchmark Plot Request Template
+
+Save the following as a concise request JSON when you want exact plotting rather than text-to-image generation.
+
+```json
+{
+  "suptitle": "Ablation and Efficiency Summary",
+  "style": {
+    "font_size": 12,
+    "axes_linewidth": 2.0
+  },
+  "layout": {
+    "nrows": 1,
+    "ncols": 3,
+    "figsize": [14, 5],
+    "width_ratios": [1, 1, 0.32]
+  },
+  "panels": [
+    {
+      "kind": "bar",
+      "title": "Main Metrics",
+      "ylabel": "Score",
+      "ylim": [0.7, 1.0],
+      "annotate": true,
+      "annotate_fontsize": 8,
+      "legend": false,
+      "data": {
+        "categories": ["AUC", "F1", "Recall", "Precision"],
+        "series": {
+          "Ours": [0.93, 0.89, 0.88, 0.91],
+          "Baseline A": [0.88, 0.84, 0.86, 0.85],
+          "Baseline B": [0.83, 0.81, 0.80, 0.82]
+        }
+      },
+      "colors": {
+        "Ours": "blue_main",
+        "Baseline A": "green_3",
+        "Baseline B": "red_strong"
+      }
+    },
+    {
+      "kind": "scatter",
+      "title": "Latency vs Accuracy",
+      "xlabel": "Latency (ms)",
+      "ylabel": "Accuracy",
+      "xlim": [22, 41],
+      "ylim": [0.82, 0.94],
+      "xticks": [25, 30, 35, 40],
+      "legend": false,
+      "data": {
+        "series": [
+          {
+            "label": "Ours",
+            "x": [24],
+            "y": [0.93],
+            "color": "blue_main"
+          },
+          {
+            "label": "Baseline A",
+            "x": [31],
+            "y": [0.88],
+            "color": "green_3"
+          },
+          {
+            "label": "Baseline B",
+            "x": [39],
+            "y": [0.83],
+            "color": "red_strong"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "legend",
+      "source_panel": 0,
+      "legend_loc": "center",
+      "legend_ncol": 1
+    }
+  ]
+}
+```

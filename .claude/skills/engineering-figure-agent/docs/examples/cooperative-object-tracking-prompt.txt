@@ -1,0 +1,26 @@
+Create a brand-new publication-quality cooperative perception and tracking pipeline figure. Use the visual cleanliness and information density of strong autonomous-driving paper figures, but do not reuse the old four-box repeated layout from the reference.
+
+Required technical concepts:
+- feature extraction
+- feature fusion
+- object association
+- trajectory prediction or trajectory update
+- cooperative perception inputs from multiple agents or vehicles
+- temporal modeling for tracking
+
+Layout instructions:
+- do NOT keep the old composition of four large boxes arranged almost identically
+- instead, build a more modern pipeline layout with clearer directional flow
+- suggested structure: lower-left or left for cooperative sensing and feature extraction, center for multi-agent fusion and shared representation, upper-right for association and motion reasoning, lower-right for trajectory refinement and update
+- use grouped regions and flow arrows, but vary the panel shapes and spatial hierarchy so the composition feels newly designed
+- make the diagram feel more contemporary and deliberate than the reference
+
+Visual style:
+- white background
+- publication-style engineering diagram
+- low-saturation yellow panels, pale purple outlines, soft peach highlights, light blue feature maps
+- readable labels, clean arrows, consistent spacing
+- medium-to-high detail level
+- suitable as a polished showcase example for a public repository
+
+The final output should be an original cooperative perception + tracking overview with the same technical seriousness as the reference, but clearly a newly organized figure rather than a layout copy.

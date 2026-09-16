@@ -1,0 +1,92 @@
+{{ define "main" }}
+{{ $deckItems := slice }}
+{{ range $deck := .Site.Sections }}
+  {{ $contentPage := $.Site.GetPage (printf "/%s/content" $deck.Section) }}
+  {{ $category := "" }}
+  {{ range $.Site.Data.content_categories }}
+    {{ $categoryID := .id }}
+    {{ range readDir (printf "content/%s" .id) }}
+      {{ if and .IsDir (eq (lower .Name) (lower $deck.Section)) }}
+        {{ $category = $categoryID }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ $deckTitle := $deck.Title }}
+  {{ $deckSummary := $deck.Params.summary }}
+  {{ $presenter := or $deck.Params.presenter $.Site.Params.presenter $.Site.Params.author "未设置" }}
+  {{ $reportDate := or $deck.Params.report_date $.Site.Params.report_date (now.Format "2006-01-02") }}
+  {{ $slideCount := len $deck.RegularPages }}
+  {{ $template := "xtu" }}
+  {{ if $contentPage }}
+    {{ $deckTitle = or $contentPage.Title $deckTitle }}
+    {{ $deckSummary = or $contentPage.Params.summary $deckSummary }}
+    {{ $presenter = or $contentPage.Params.presenter $presenter }}
+    {{ $reportDate = or $contentPage.Params.report_date $reportDate }}
+    {{ $slideCount = sub (len (findRE `(?m)^order:\s*\d+\s*$` $contentPage.RawContent)) (len (findRE `(?m)^hidden:\s*true\s*$` $contentPage.RawContent)) }}
+    {{ $template = lower (or $contentPage.Params.template "xtu") }}
+  {{ end }}
+  {{ $deckItems = $deckItems | append (dict
+    "category" $category
+    "page" $deck
+    "title" $deckTitle
+    "summary" $deckSummary
+    "presenter" $presenter
+    "report_date" $reportDate
+    "slide_count" $slideCount
+    "template" $template
+  ) }}
+{{ end }}
+{{ $decks := sort $deckItems "report_date" "desc" }}
+{{ $summary := newScratch }}
+{{ $summary.Set "totalPages" 0 }}
+{{ range $decks }}{{ $summary.Add "totalPages" .slide_count }}{{ end }}
+{{ $deckCount := len $decks }}
+<main class="xtu-pm-main">
+  <header class="xtu-pm-home-info">
+    <h1 class="xtu-pm-title">{{ .Site.Title }}</h1>
+    <p class="xtu-pm-subtitle">{{ or .Site.Params.subtitle "Xiangtan University Slide Collections" }}</p>
+    <div class="xtu-pm-stats">
+      <span>{{ $deckCount }} Decks</span>
+      <span>{{ $summary.Get "totalPages" }} Pages</span>
+      <span>16:9 Slides</span>
+    </div>
+    <p class="xtu-pm-entry-meta">
+      <span>GitHub：</span>
+      <a href="https://github.com/BlackJulySnow/xtu-hugo-slide" target="_blank" rel="noreferrer">https://github.com/BlackJulySnow/xtu-hugo-slide</a>
+    </p>
+  </header>
+
+  <nav class="xtu-category-nav" aria-label="汇报分类">
+    <a href="#all" data-category="all" aria-current="true">全部 <span>{{ $deckCount }}</span></a>
+    {{ range .Site.Data.content_categories }}
+      <a href="#{{ .id }}" data-category="{{ .id }}">{{ .title }} <span>{{ len (where $decks "category" .id) }}</span></a>
+    {{ end }}
+  </nav>
+  <p class="xtu-category-status" aria-live="polite"></p>
+  <section class="xtu-pm-list">
+    {{ if eq $deckCount 0 }}
+      <article class="xtu-pm-empty">
+        <p>暂无可展示的 deck，创建内容后会自动出现在这里。</p>
+      </article>
+    {{ end }}
+
+    {{ range $idx, $deck := $decks }}
+      <a data-deck-category="{{ $deck.category }}" class="xtu-pm-entry" style="--entry-delay: {{ mul $idx 50 }}ms;" href="{{ $deck.page.RelPermalink }}">
+        <h2 class="xtu-pm-entry-title">{{ $deck.title }}</h2>
+        {{ with $deck.summary }}
+          <p class="xtu-pm-entry-summary">{{ . }}</p>
+        {{ else }}
+          <p class="xtu-pm-entry-summary">该报告未设置摘要，点击卡片可进入封面页并继续播放。</p>
+        {{ end }}
+        <p class="xtu-pm-entry-meta">
+          <span>汇报人：{{ $deck.presenter }}</span>
+          <span>日期：{{ $deck.report_date }}</span>
+          <span>{{ $deck.slide_count }} 页</span>
+          <span>{{ upper $deck.template }} 模板</span>
+        </p>
+      </a>
+    {{ end }}
+  </section>
+</main>
+<script src="{{ "js/categories.js" | relURL }}" defer></script>
+{{ end }}

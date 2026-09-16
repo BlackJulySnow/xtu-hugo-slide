@@ -1,0 +1,7 @@
+interface:
+  display_name: "论文分析助手"
+  short_description: "中文精读论文并生成组会汇报大纲。"
+  default_prompt: "Use $paper-report-assistant 直接完成从论文到组会 slide 的一条龙服务：自动精读论文，按多 agent 分工完成结构化分析、图表提取、必要时调用 paddle-structure 和 pdf-image-crop 获取论文原图、没有合适图时再调用 nano-banana 补图，生成 10 页左右中文组会 PPT 大纲、讲稿，并在当前 xtu-hugo-sample 仓库里落地 deck、生成 slide、导出 PDF。优先引用 Fig. X 和 Table X，不要一步步停下来让我确认。"
+
+policy:
+  allow_implicit_invocation: true

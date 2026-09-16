@@ -1,0 +1,476 @@
+{{ define "main" }}
+{{ $currentSection := .CurrentSection }}
+{{ $slides := slice }}
+{{ if $currentSection }}
+  {{ range $page := $currentSection.RegularPages }}
+    {{ if not (strings.HasPrefix $page.File.Dir "docs") }}
+      {{ $slides = $slides | append $page }}
+    {{ end }}
+  {{ end }}
+{{ else }}
+  {{ range $page := .Site.RegularPages }}
+    {{ if not (strings.HasPrefix $page.File.Dir "docs") }}
+      {{ $slides = $slides | append $page }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ $slides = sort $slides ".Params.order" }}
+{{ $currentIndex := -1 }}
+{{ range $idx, $item := $slides }}
+  {{ if eq $item.RelPermalink $.RelPermalink }}
+    {{ $currentIndex = $idx }}
+  {{ end }}
+{{ end }}
+
+{{ $prevUrl := "" }}
+{{ $nextUrl := "" }}
+{{ if and (ge $currentIndex 0) (lt $currentIndex (sub (len $slides) 1)) }}
+  {{ $nextPage := index $slides (add $currentIndex 1) }}
+  {{ $nextUrl = printf "../%s/" $nextPage.File.ContentBaseName }}
+{{ end }}
+{{ if gt $currentIndex 0 }}
+  {{ $prevPage := index $slides (sub $currentIndex 1) }}
+  {{ $prevUrl = printf "../%s/" $prevPage.File.ContentBaseName }}
+{{ end }}
+{{ $siteRootUrl := "../../" }}
+{{ $homeUrl := "../" }}
+{{ if not $currentSection }}
+  {{ $siteRootUrl = "../" }}
+  {{ $homeUrl = "./" }}
+{{ end }}
+
+{{ $currentSectionKey := or .Params.section_key .Params.section_title "" }}
+{{ $headerTitle := or .Params.subsection_title .Title "Slide" }}
+
+{{ $scratch := newScratch }}
+{{ $scratch.Set "sectionKeys" (slice) }}
+{{ $scratch.Set "sections" (slice) }}
+{{ range $idx, $item := $slides }}
+  {{ $key := or $item.Params.section_key $item.Params.section_title (printf "section-%d" (add $idx 1)) }}
+  {{ $keys := $scratch.Get "sectionKeys" }}
+  {{ if not (in $keys $key) }}
+    {{ $title := or $item.Params.section_title $item.Params.nav_title (printf "Section %d" (add $idx 1)) }}
+    {{ $scratch.Add "sectionKeys" (slice $key) }}
+    {{ $entry := dict "key" $key "title" $title "firstPath" $item.RelPermalink }}
+    {{ $scratch.Add "sections" (slice $entry) }}
+  {{ end }}
+{{ end }}
+{{ $sections := $scratch.Get "sections" }}
+
+<header class="xtu-header">
+  <div class="xtu-title-wrap">
+    <h1 class="xtu-page-title">{{ $headerTitle }}</h1>
+    <div class="xtu-title-underline"></div>
+  </div>
+  <div class="xtu-brand">
+    <div class="xtu-logo"><img src="{{ "brand/xtu-logo.svg" | relURL }}" alt="XTU Logo"></div>
+    <div class="xtu-brand-text">
+      <img src="{{ "brand/xtu-text.png" | relURL }}" alt="Xiangtan University" class="xtu-brand-cn">
+      <span class="xtu-brand-en">XiangTan University</span>
+    </div>
+  </div>
+</header>
+
+<main class="xtu-main">
+  <article id="slideContent" class="xtu-card xtu-slide-card">
+    <div id="fitRoot" class="xtu-md-root">
+      {{ .Content }}
+    </div>
+  </article>
+</main>
+
+<footer class="xtu-footer">
+  <div class="xtu-nav-sections">
+    {{ range $sections }}
+      <span class="xtu-nav-item {{ if eq (index . "key") $currentSectionKey }}is-active{{ end }}">{{ index . "title" }}</span>
+    {{ end }}
+  </div>
+  <div class="xtu-page-number">{{ if ge $currentIndex 0 }}{{ add $currentIndex 2 }}{{ else }}0{{ end }}</div>
+</footer>
+
+<div id="xtuLightbox" class="xtu-lightbox" aria-hidden="true">
+  <button id="xtuLightboxClose" class="xtu-lightbox-close" type="button" aria-label="Close image preview">&times;</button>
+  <div class="xtu-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Image preview">
+    <img id="xtuLightboxImage" class="xtu-lightbox-image" alt="">
+    <div id="xtuLightboxCaption" class="xtu-lightbox-caption"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var siteRoot = {{ printf "%q" $siteRootUrl | safeJS }};
+  var prevUrl = {{ printf "%q" $prevUrl | safeJS }};
+  var nextUrl = {{ printf "%q" $nextUrl | safeJS }};
+  var homeUrl = {{ printf "%q" $homeUrl | safeJS }};
+  var isFirstSlide = {{ if eq $currentIndex 0 }}true{{ else }}false{{ end }};
+
+  function relContent(url) {
+    if (!url || url.charAt(0) !== '/') return url;
+    return siteRoot.replace(/\/+$/, '/') + url.replace(/^\//, '');
+  }
+
+  function go(url) {
+    if (!url) return;
+    window.location.href = url;
+  }
+
+  var slide = document.getElementById('slideContent');
+  var fitRoot = document.getElementById('fitRoot');
+  var lightbox = document.getElementById('xtuLightbox');
+  var lightboxImage = document.getElementById('xtuLightboxImage');
+  var lightboxCaption = document.getElementById('xtuLightboxCaption');
+  var lightboxClose = document.getElementById('xtuLightboxClose');
+  var lightboxOpen = false;
+
+  function ensureLightboxRoot() {
+    if (!lightbox) return;
+    var bodyStyles = window.getComputedStyle(document.body);
+    var captionFontPx = bodyStyles.getPropertyValue('--xtu-slide-caption-font-px');
+    if (captionFontPx) {
+      lightbox.style.setProperty('--xtu-slide-caption-font-px', captionFontPx.trim());
+    }
+    lightbox.style.fontFamily = bodyStyles.fontFamily;
+    if (lightbox.parentNode === document.documentElement) return;
+    document.documentElement.appendChild(lightbox);
+  }
+
+  function isImageOnlyParagraph(node) {
+    return node && node.tagName === 'P' && node.textContent.trim() === '' && node.querySelectorAll('img').length > 0;
+  }
+
+  function mediaNodeForImage(img) {
+    var parent = img.parentElement;
+    if (
+      parent &&
+      parent.tagName === 'A' &&
+      parent.childElementCount === 1 &&
+      parent.textContent.trim() === ''
+    ) {
+      return parent;
+    }
+    return img;
+  }
+
+  function findAncestorByClass(node, className) {
+    var cur = node;
+    while (cur && cur !== fitRoot) {
+      if (cur.classList && cur.classList.contains(className)) {
+        return cur;
+      }
+      cur = cur.parentNode;
+    }
+    return null;
+  }
+
+  function captionTextForImage(img, index) {
+    var val = (img.getAttribute('data-caption') || img.getAttribute('title') || img.getAttribute('alt') || '').trim();
+    return val || ('图示 ' + index);
+  }
+
+  function buildFigure(media, img, index) {
+    var figure = document.createElement('figure');
+    figure.className = 'xtu-figure';
+    figure.appendChild(media);
+
+    var caption = document.createElement('figcaption');
+    caption.className = 'xtu-figcaption';
+    caption.textContent = captionTextForImage(img, index);
+    figure.appendChild(caption);
+    return figure;
+  }
+
+  function buildMediaRow(paragraphs) {
+    var allMedia = [];
+    var allImages = [];
+    paragraphs.forEach(function (p) {
+      Array.prototype.forEach.call(p.querySelectorAll('img'), function (img) {
+        var media = mediaNodeForImage(img);
+        if (allMedia.indexOf(media) === -1) {
+          allMedia.push(media);
+          allImages.push(img);
+        }
+      });
+    });
+    if (allMedia.length < 2) return null;
+
+    var row = document.createElement('div');
+    row.className = 'xtu-media-row' + (allMedia.length === 2 ? ' is-two' : '');
+    allMedia.forEach(function (media, idx) {
+      var item = document.createElement('div');
+      item.className = 'xtu-media-item';
+      item.appendChild(buildFigure(media, allImages[idx], idx + 1));
+      row.appendChild(item);
+    });
+    return row;
+  }
+
+  function normalizeMediaLayout() {
+    if (!fitRoot) return;
+    var current = fitRoot.firstElementChild;
+    while (current) {
+      var next = current.nextElementSibling;
+      if (!isImageOnlyParagraph(current)) {
+        current = next;
+        continue;
+      }
+
+      var group = [current];
+      while (next && isImageOnlyParagraph(next) && next.querySelectorAll('img').length === 1) {
+        group.push(next);
+        next = next.nextElementSibling;
+      }
+
+      var row = null;
+      if (group.length >= 2) {
+        row = buildMediaRow(group);
+      } else if (current.querySelectorAll('img').length >= 2) {
+        row = buildMediaRow([current]);
+      }
+
+      if (row) {
+        fitRoot.insertBefore(row, group[0]);
+        group.forEach(function (node) { node.remove(); });
+      }
+
+      current = next;
+    }
+  }
+
+  function ensureImageCaptions() {
+    if (!fitRoot) return;
+    var images = Array.prototype.slice.call(fitRoot.querySelectorAll('img'));
+    images.forEach(function (img, idx) {
+      var figure = findAncestorByClass(img, 'xtu-figure');
+      if (figure) {
+        var existing = figure.querySelector('.xtu-figcaption');
+        if (!existing) {
+          var cap = document.createElement('figcaption');
+          cap.className = 'xtu-figcaption';
+          cap.textContent = captionTextForImage(img, idx + 1);
+          figure.appendChild(cap);
+        }
+        return;
+      }
+
+      var media = mediaNodeForImage(img);
+      var parent = media.parentNode;
+      if (!parent) return;
+      var newFigure = buildFigure(media, img, idx + 1);
+      newFigure.classList.add('xtu-figure-standalone');
+      if (
+        parent.tagName === 'P' &&
+        parent.textContent.trim() === '' &&
+        parent.childElementCount <= 2
+      ) {
+        parent.parentNode.insertBefore(newFigure, parent);
+        parent.remove();
+      } else {
+        var marker = document.createTextNode('');
+        parent.insertBefore(marker, media);
+        parent.insertBefore(newFigure, marker);
+        parent.removeChild(marker);
+      }
+    });
+  }
+
+  function applyImageFillMode() {
+    if (!fitRoot || !slide) return;
+    var images = fitRoot.querySelectorAll('img').length;
+    if (!images) {
+      slide.classList.remove('is-image-heavy');
+      return;
+    }
+
+    var textBlocks = 0;
+    Array.prototype.forEach.call(fitRoot.children, function (node) {
+      if (!node || !node.tagName) return;
+      if (
+        node.classList.contains('xtu-media-row') ||
+        node.classList.contains('xtu-figure') ||
+        node.classList.contains('xtu-figure-standalone')
+      ) {
+        return;
+      }
+      if (node.tagName === 'H1') return;
+
+      var txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+      if (txt.length >= 24) {
+        textBlocks += 1;
+      }
+    });
+
+    var hasTable = fitRoot.querySelectorAll('table').length > 0;
+    var isImageHeavy = images > 0 && textBlocks <= 2 && !hasTable;
+    slide.classList.toggle('is-image-heavy', isImageHeavy);
+  }
+
+  function lightboxCaptionForImage(img) {
+    var figure = findAncestorByClass(img, 'xtu-figure');
+    if (figure) {
+      var cap = figure.querySelector('.xtu-figcaption');
+      if (cap && cap.textContent) {
+        return cap.textContent.trim();
+      }
+    }
+    return captionTextForImage(img, 1);
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightboxOpen) return;
+    lightbox.classList.remove('is-open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('xtu-lightbox-open');
+    lightboxImage.removeAttribute('src');
+    lightboxImage.setAttribute('alt', '');
+    lightboxCaption.textContent = '';
+    lightboxOpen = false;
+  }
+
+  function openLightbox(img) {
+    if (!lightbox || !img) return;
+    var src = img.getAttribute('src');
+    if (!src) return;
+    lightboxImage.setAttribute('src', src);
+    lightboxImage.setAttribute('alt', (img.getAttribute('alt') || '').trim());
+    lightboxCaption.textContent = lightboxCaptionForImage(img);
+    lightbox.classList.add('is-open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('xtu-lightbox-open');
+    lightboxOpen = true;
+  }
+
+  function initLightbox() {
+    if (!fitRoot || !lightbox) return;
+    ensureLightboxRoot();
+    Array.prototype.forEach.call(fitRoot.querySelectorAll('img'), function (img) {
+      img.classList.add('xtu-zoomable');
+      img.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openLightbox(img);
+      });
+      var media = mediaNodeForImage(img);
+      if (media && media.tagName === 'A') {
+        media.addEventListener('click', function (e) {
+          e.preventDefault();
+        });
+      }
+    });
+
+    if (lightboxClose) {
+      lightboxClose.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeLightbox();
+      });
+    }
+
+    lightbox.addEventListener('click', function (e) {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+  }
+
+  if (fitRoot) {
+    Array.prototype.forEach.call(fitRoot.querySelectorAll("img[src^='/'], a[href^='/']"), function (node) {
+      if (node.hasAttribute('src')) {
+        node.setAttribute('src', relContent(node.getAttribute('src')));
+      }
+      if (node.hasAttribute('href')) {
+        node.setAttribute('href', relContent(node.getAttribute('href')));
+      }
+    });
+    normalizeMediaLayout();
+    ensureImageCaptions();
+    applyImageFillMode();
+    initLightbox();
+  }
+
+  function onKeyNav(e) {
+    var key = e.key || '';
+    if (lightboxOpen) {
+      if (key === 'Escape' || key === 'Esc' || e.keyCode === 27) {
+        e.preventDefault();
+        closeLightbox();
+      }
+      return;
+    }
+    var up = key === 'ArrowUp' || key === 'Up' || e.keyCode === 38;
+    var left = key === 'ArrowLeft' || key === 'Left' || e.keyCode === 37;
+    var right = key === 'ArrowRight' || key === 'Right' || e.keyCode === 39;
+    var down = key === 'ArrowDown' || key === 'Down' || e.keyCode === 40;
+
+    if (up) {
+      e.preventDefault();
+      if (isFirstSlide) {
+        go(homeUrl);
+      } else {
+        go(prevUrl);
+      }
+      return;
+    }
+    if (left) {
+      e.preventDefault();
+      if (isFirstSlide) {
+        go(homeUrl);
+      } else {
+        go(prevUrl);
+      }
+      return;
+    }
+    if (right || down) {
+      e.preventDefault();
+      go(nextUrl);
+    }
+  }
+
+  document.removeEventListener('keydown', onKeyNav);
+  document.addEventListener('keydown', onKeyNav, true);
+
+  var wheelLock = false;
+  function onWheelNav(e) {
+    if (lightboxOpen) return;
+    if (wheelLock) return;
+    if (Math.abs(e.deltaY) < 16) return;
+    wheelLock = true;
+    if (e.deltaY > 0) {
+      go(nextUrl);
+    } else if (isFirstSlide) {
+      go(homeUrl);
+    } else {
+      go(prevUrl);
+    }
+    setTimeout(function () { wheelLock = false; }, 280);
+  }
+  document.addEventListener('wheel', onWheelNav, { passive: true });
+
+})();
+</script>
+
+<!-- KaTeX 数学公式支持 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="
+  (function () {
+    var initialized = false;
+    function renderMath() {
+      if (initialized) return;
+      initialized = true;
+      renderMathInElement(document.getElementById('fitRoot') || document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+    }
+    if (document.readyState === 'complete') {
+      renderMath();
+    } else {
+      window.addEventListener('DOMContentLoaded', renderMath);
+    }
+  })();
+"></script>
+{{ end }}
