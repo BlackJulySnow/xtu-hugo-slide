@@ -4,6 +4,10 @@
 
 你可以把它理解成一个“能写 Markdown、能放论文图、能本地预览、还能直接导出 PDF”的 Hugo 幻灯片仓库。
 
+在线预览地址：
+
+- https://slide.bsnow.cn/
+
 `content/examples/demo-report/` 里有一套可直接运行的示例 deck，克隆后执行 `npm run dev` 即可看到效果。
 
 最常见的事情只有 4 类：
