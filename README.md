@@ -75,7 +75,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | 功能 | 对应 skill | 必需环境变量 |
 | --- | --- | --- |
 | 论文 PDF 结构化解析 | `paddle-structure` | `PADDLE_STRUCTURE_URL`、`PADDLE_STRUCTURE_TOKEN` |
-| 基于论文内容补图 / 重绘示意图 | `nano-banana` | `OPENROUTER_API_KEY` |
+| 生成 / 重绘论文配图 | `engineering-figure-agent` | `NANOBANANA_API_KEY` 或 `OPENAI_API_KEY` |
 | 高清裁图 | `pdf-image-crop` | 不需要新密钥，但依赖 `paddle-structure` 的输出 |
 | 中文论文精读 / 组会大纲 | `paper-report-assistant` | 本身不需要额外密钥，但通常会配合上面两个 skill 一起用 |
 
@@ -123,30 +123,36 @@ PADDLE_STRUCTURE_TOKEN="..." \
 uv run .agent/skills/paddle-structure/scripts/run_paddle_structure.py --file "/绝对路径/paper.pdf" --output-dir output/paper-structure
 ```
 
-### 3.4 `nano-banana` 需要的环境变量
+### 3.4 `engineering-figure-agent` 需要的环境变量
 
-这个 skill 用来补图、重绘概念图、生成示意图。
+这个 skill 用来生成或重绘论文配图：系统架构图、算法流程图、模型结构图等。
 
-必须配置：
+它支持两种图像后端，配其中一种即可：
 
-- `OPENROUTER_API_KEY`
+- Gemini / Nano Banana 系：`NANOBANANA_API_KEY`
+- OpenAI 图像模型：`OPENAI_API_KEY`
 
-官方入口：
-
-- OpenRouter Keys: https://openrouter.ai/workspaces/default/keys
+也可以把 key 放进文件，用 `NANOBANANA_API_KEY_FILE` / `OPENAI_API_KEY_FILE` 指向文件路径。
 
 建议写到 `~/.bashrc`：
 
 ```bash
-export OPENROUTER_API_KEY="你的 OpenRouter API Key"
+export NANOBANANA_API_KEY="你的图像模型 API Key"
 ```
 
-这个 key 用于通过 OpenRouter 调用图像模型。
+如果走第三方中转地址，还要指定接入点和模型名，完整模板见
+`.claude/skills/engineering-figure-agent/secrets/nanobanana.env.example`：
 
-当前 skill 支持的模型包括：
+```bash
+export NANOBANANA_BASE_URL="https://your-relay.example.com"
+export NANOBANANA_DEFAULT_MODEL="你的默认图像模型"
+export NANOBANANA_HIGHRES_MODEL="你的高清图像模型"
+export NANOBANANA_AUTH_MODE=bearer
+export NANOBANANA_ALLOW_THIRD_PARTY=1
+```
 
-- `google/gemini-3-pro-image-preview`
-- `google/gemini-3.1-flash-image-preview`
+用官方 Gemini 时，把 `NANOBANANA_BASE_URL` 设为 `https://generativelanguage.googleapis.com`、
+`NANOBANANA_AUTH_MODE` 设为 `google` 即可。
 
 ### 3.5 一个可直接照抄的 `~/.bashrc` 示例
 
@@ -157,8 +163,8 @@ export OPENROUTER_API_KEY="你的 OpenRouter API Key"
 export PADDLE_STRUCTURE_URL="你的 Paddle Structure 接口地址"
 export PADDLE_STRUCTURE_TOKEN="你的 Paddle Structure Token"
 
-# Nano Banana / OpenRouter
-export OPENROUTER_API_KEY="你的 OpenRouter API Key"
+# 论文配图（engineering-figure-agent）
+export NANOBANANA_API_KEY="你的图像模型 API Key"
 ```
 
 ### 3.6 不要这样做
@@ -183,7 +189,7 @@ export OPENROUTER_API_KEY="你的 OpenRouter API Key"
 | `paper-report-assistant` | 精读论文，输出中文结构化分析与组会大纲 | 无，通常配合下面两个一起用 |
 | `paddle-structure` | 把本地 PDF / 图片解析成结构化 Markdown 和图片 | `PADDLE_STRUCTURE_URL`、`PADDLE_STRUCTURE_TOKEN` |
 | `pdf-image-crop` | 基于 `paddle-structure` 的输出，从原始 PDF 裁高清图（默认 10x） | 先跑过 `paddle-structure`，且有原始 PDF |
-| `engineering-figure-agent` | 生成论文与工程配图：系统架构图、流程图、模型结构图等 | 无 |
+| `engineering-figure-agent` | 生成论文与工程配图：系统架构图、流程图、模型结构图等 | `NANOBANANA_API_KEY` 或 `OPENAI_API_KEY` |
 | `academic-search` | 学术论文搜索、引用分析与元数据提取 | 无 |
 | `nsfc-write` | NSFC 申请书撰写指南（选题、摘要、立项依据、研究内容等） | 无 |
 | `nsfc-literature` | NSFC 申请书文献检索与引用生成 | 无 |
@@ -370,7 +376,7 @@ papers/your-paper.pdf
 适合直接下这种指令：
 
 ```text
-使用 paper-report-assistant 分析这篇论文，输出中文精读结果，并生成 10 页左右中文组会 PPT 大纲，优先引用 Fig. X / Table X，没有合适图再考虑 nano-banana
+使用 paper-report-assistant 分析这篇论文，输出中文精读结果，并生成 10 页左右中文组会 PPT 大纲，优先引用 Fig. X / Table X，没有合适图再考虑 engineering-figure-agent
 ```
 
 ### 第二步补充：如果你不想一步步来，直接用这条总控 prompt
@@ -388,7 +394,7 @@ papers/your-paper.pdf
    - slide-architect：负责生成中文组会汇报结构、每页标题、bullet、讲稿和页面叙事逻辑。
 3. 如果只有 PDF，没有结构化文本，优先调用 paddle-structure 做结构化解析。
 4. 如果需要展示论文原图，优先调用 pdf-image-crop 从原始 PDF 裁切高清图。
-5. 如果论文没有合适图片，且确实需要概念图、流程图或总结示意图，再调用 nano-banana 进行补图或重绘。
+5. 如果论文没有合适图片，且确实需要概念图、流程图或总结示意图，再调用 engineering-figure-agent 进行补图或重绘。
 6. 汇报内容默认使用中文，默认生成 10 页左右中文组会 PPT。
 7. 每一页都要包含：
    - 页面标题
@@ -513,12 +519,12 @@ npm run export-pdf -- --deck demo-report
 - `PADDLE_STRUCTURE_TOKEN` 是否配置
 - `uv` 是否安装
 
-### 9.5 `nano-banana` 跑不起来
+### 9.5 `engineering-figure-agent` 跑不起来
 
 先检查：
 
-- `OPENROUTER_API_KEY` 是否配置
-- `uv` 是否安装
+- `NANOBANANA_API_KEY` 或 `OPENAI_API_KEY` 是否配置
+- 若用第三方中转，`NANOBANANA_BASE_URL` 与模型名是否正确
 
 ---
 
